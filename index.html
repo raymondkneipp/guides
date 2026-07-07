@@ -15,8 +15,8 @@
   a.card:hover { border-color:var(--accent); }
   a.card .t { color:var(--fg); font-size:18px; font-weight:600; }
   a.card .d { color:var(--dim); font-size:14px; margin-top:5px; }
+  a.card code { background:#0e141f; border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-size:12.5px; color:#cde3ff; }
   .foot { color:var(--dim); font-size:13px; margin-top:40px; }
-  .foot a { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -27,6 +27,16 @@
   <a class="card" href="./django-drf-labels.html">
     <div class="t">📘 Django + DRF — Applications &amp; Labels</div>
     <div class="d">A DRF API where users create Applications with many unique Labels, admins gate an <code>is_protected</code> flag, and labels are get-or-created inline on app create.</div>
+  </a>
+
+  <a class="card" href="./url-shortener.html">
+    <div class="t">🔗 Build a URL Shortener</div>
+    <div class="d">Django · Postgres · Kafka · Kubernetes — a full walkthrough for a production-style URL shortener.</div>
+  </a>
+
+  <a class="card" href="./incident-api.html">
+    <div class="t">🚨 Incident Management API</div>
+    <div class="d">DRF · Kafka · Kubernetes — designing and building an incident-management REST API.</div>
   </a>
 
   <p class="foot">Hosted on GitHub Pages.</p>

@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Incident Management API — DRF · Kafka · Kubernetes</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#38bdf8; --accent2:#a78bfa; --border:#334155; --ok:#34d399; --warn:#fbbf24;
+    --code:#0b1220; --danger:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 120px}
+  header.hero{padding:28px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 8px;line-height:1.2}
+  h1 .sub{display:block;font-size:15px;color:var(--muted);font-weight:400;margin-top:8px}
+  h2{font-size:22px;margin:44px 0 6px;padding-top:12px;border-top:1px dashed var(--border)}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 6px;color:var(--accent2)}
+  p{margin:10px 0}
+  a{color:var(--accent)}
+  code:not(pre code){background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.92em}
+  .lead{color:var(--muted)}
+  .stack{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .chip{background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:5px 12px;font-size:13px;color:var(--muted)}
+  .chip b{color:var(--text)}
+  .task{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;
+    padding:12px 16px;margin:16px 0}
+  .task b{color:var(--accent)}
+  .note{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);
+    border-radius:8px;padding:10px 14px;margin:14px 0;font-size:14px}
+  .note.why{border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08)}
+  .note.gotcha{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+  .note .tag{font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:11px;
+    display:block;margin-bottom:2px;color:var(--accent2)}
+  .note.gotcha .tag{color:var(--warn)}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    margin:12px 0;overflow:hidden}
+  details[open]{border-color:var(--accent)}
+  summary{cursor:pointer;padding:11px 16px;font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:10px;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▶";color:var(--accent);font-size:11px;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{background:var(--panel2)}
+  summary .kind{margin-left:auto;font-size:11px;color:var(--muted);font-weight:500;
+    text-transform:uppercase;letter-spacing:.04em}
+  details .body{padding:0 16px 14px}
+  pre{background:var(--code)!important;border:1px solid var(--border);border-radius:8px;
+    padding:14px;overflow:auto;margin:10px 0;font-size:13.5px;line-height:1.5;position:relative}
+  pre code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .copy-btn{position:absolute;top:8px;right:8px;background:var(--panel2);color:var(--muted);
+    border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;
+    opacity:0;transition:opacity .12s;font-family:system-ui,sans-serif}
+  pre:hover .copy-btn{opacity:1}
+  .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+  .copy-btn.done{color:var(--ok);border-color:var(--ok);opacity:1}
+  .path{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--accent2);
+    margin:8px 0 -4px;display:block}
+  .toolbar{position:sticky;top:0;z-index:5;background:rgba(15,23,42,.92);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--border);
+    margin:0 -20px 0;padding:10px 20px;display:flex;gap:10px;align-items:center}
+  .toolbar button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .toolbar button:hover{border-color:var(--accent)}
+  .toolbar .grow{flex:1}
+  .toc{columns:2;gap:24px;font-size:14px;margin:12px 0 0;padding:0;list-style:none}
+  .toc li{margin:4px 0;break-inside:avoid}
+  .toc a{color:var(--muted);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  ul.clean{margin:10px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  table.matrix{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px}
+  table.matrix th,table.matrix td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+  table.matrix th{background:var(--panel2);color:var(--text)}
+  table.matrix td{color:var(--muted)}
+  .yes{color:var(--ok)} .no{color:var(--danger)}
+  .arch{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:16px;overflow:auto;font-family:ui-monospace,monospace;font-size:12.5px;
+    color:var(--muted);white-space:pre;line-height:1.5}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13px}
+  kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;
+    border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Incident Management API
+    <span class="sub">A PagerDuty/Statuspage-style service built on <b>Django REST Framework</b> · <b>Kafka</b> · <b>Kubernetes</b></span>
+  </h1>
+  <div class="stack">
+    <span class="chip"><b>DRF</b> — nested serializers + a full permission ladder</span>
+    <span class="chip"><b>Kafka</b> — async incident events</span>
+    <span class="chip"><b>Kubernetes</b> — deploy the whole thing</span>
+    <span class="chip"><b>Argo CD</b> — GitOps (bonus)</span>
+  </div>
+  <p class="lead">Build a real incident-tracking API: services, incidents, and a timeline of updates —
+  with proper auth and a four-tier permission model (anonymous → user → staff → admin). Every step
+  states the <b>goal</b> and the <b>why</b> in the open and keeps the code collapsed, so you try first,
+  then reveal the solution. Code blocks have a <b>Copy</b> button.</p>
+</header>
+
+<div class="toolbar">
+  <button id="expandAll">Expand all</button>
+  <button id="collapseAll">Collapse all</button>
+  <span class="grow"></span>
+  <span style="font-size:12px;color:var(--muted)">Click ▶ to reveal a solution</span>
+</div>
+
+<h3 style="margin-top:22px">Contents</h3>
+<ol class="toc">
+  <li><a href="#arch">0 · Architecture, model & permission ladder</a></li>
+  <li><a href="#setup">1 · Setup (uv + Django + DRF)</a></li>
+  <li><a href="#models">2 · Models: Service → Incident → Update</a></li>
+  <li><a href="#basics">3 · Serializers, ViewSets, routers</a></li>
+  <li><a href="#nested-read">4 · Nested serializers — reading</a></li>
+  <li><a href="#nested-write">5 · Nested serializers — writing</a></li>
+  <li><a href="#auth">6 · Authentication</a></li>
+  <li><a href="#perms">7 · Public-read / auth-write + ownership</a></li>
+  <li><a href="#staff">8 · Staff checks (the moderation action)</a></li>
+  <li><a href="#admin">9 · Admin checks</a></li>
+  <li><a href="#tests">10 · The permission-matrix tests</a></li>
+  <li><a href="#kafka-pub">11 · Kafka: publish incident events</a></li>
+  <li><a href="#kafka-con">12 · Kafka consumer: activity feed</a></li>
+  <li><a href="#runlocal">13 · Run & test it locally</a></li>
+  <li><a href="#docker">14 · Containerize (uv)</a></li>
+  <li><a href="#k8s">15 · Deploy to Kubernetes</a></li>
+  <li><a href="#argo">16 · Bonus: Argo CD / GitOps</a></li>
+  <li><a href="#testing2">17 · More testing: mocks, consumer & CI</a></li>
+  <li><a href="#recap">18 · Recap & extensions</a></li>
+</ol>
+
+<!-- ============================================================= -->
+<h2 id="arch"><span class="num">0</span> · Architecture, model & permission ladder</h2>
+<p>The whole point of this project is the <b>permission ladder</b> — four roles with genuinely
+different powers over the same resources. Hold these two pictures in your head before any code.</p>
+
+<div class="arch">
+   DATA MODEL (3 levels → nested serializers)            ASYNC (Kafka)
+
+   Service ──&lt; Incident ──&lt; Update                    Incident opened/updated/resolved
+   (admin)     (user owns)   (staff posts)                      │ publish event
+                                                                ▼
+                                                         topic: incident-events
+                                                                │ consume
+                                                                ▼
+                                                     Consumer → ActivityLog + "notify"
+
+   PERMISSION LADDER                       run the whole thing on Kubernetes
+   anonymous → read public status                (API + consumer + Postgres + Kafka)
+   user      → open incidents, edit OWN
+   staff     → post updates, resolve ANY
+   admin     → manage Services, delete ANY
+</div>
+
+<table class="matrix">
+  <tr><th>Action</th><th>Anonymous</th><th>User</th><th>Staff</th><th>Admin</th></tr>
+  <tr><td>Read services / incidents</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+  <tr><td>Open an incident</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+  <tr><td>Edit / delete an incident</td><td class="no">✗</td><td>own only</td><td>own only</td><td class="yes">✓ any</td></tr>
+  <tr><td>Post update / resolve incident</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+  <tr><td>Create / manage a Service</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td></tr>
+</table>
+
+<div class="note why"><span class="tag">Why this shape</span>
+This is how real incident tools work: anyone can <i>see</i> the status page, the person who hit the
+problem <i>opens</i> the incident, the on-call responders (staff) <i>drive</i> it, and only admins touch
+the catalog of services. Implementing that cleanly is the difference between a toy API and a real one —
+and it's exactly the permission modeling interviewers and code reviewers care about.</div>
+
+<!-- ============================================================= -->
+<h2 id="setup"><span class="num">1</span> · Setup (uv + Django + DRF)</h2>
+<div class="task"><b>Your task:</b> create the project with uv, install Django + DRF, generate a
+<code>config</code> project and an <code>incidents</code> app, and register DRF.</div>
+<details><summary>Solution <span class="kind">commands + code</span></summary>
+<div class="body">
+<pre><code class="language-bash">mkdir incident-api && cd incident-api
+uv init --bare --python 3.12
+uv add "Django&gt;=5.0" djangorestframework psycopg2-binary confluent-kafka gunicorn
+
+uv run django-admin startproject config .
+uv run python manage.py startapp incidents</code></pre>
+<span class="path">config/settings.py — INSTALLED_APPS + DRF defaults</span>
+<pre><code class="language-python">INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "incidents",
+]
+
+REST_FRAMEWORK = {
+    # Session + Basic is plenty for learning + the browsable API.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    # Safe default: locked unless a view says otherwise.
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"],
+}</code></pre>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="models"><span class="num">2</span> · Models: Service → Incident → Update</h2>
+<p>Three levels of nesting. A <code>Service</code> has many <code>Incident</code>s; an
+<code>Incident</code> has many <code>Update</code>s (its timeline). Ownership lives on the incident
+(<code>reported_by</code>) and each update (<code>author</code>).</p>
+<div class="task"><b>Your task:</b> model all three, with severity/status choices on the incident and
+FK ownership fields pointing at the user.</div>
+<details><summary>Solution — <code>incidents/models.py</code> <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/models.py</span>
+<pre><code class="language-python">from django.conf import settings
+from django.db import models
+
+
+class Service(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Incident(models.Model):
+    class Severity(models.TextChoices):
+        SEV1 = "SEV1", "Critical"
+        SEV2 = "SEV2", "Major"
+        SEV3 = "SEV3", "Minor"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        MONITORING = "monitoring", "Monitoring"
+        RESOLVED = "resolved", "Resolved"
+
+    service = models.ForeignKey(Service, related_name="incidents", on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    severity = models.CharField(max_length=4, choices=Severity.choices, default=Severity.SEV3)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.OPEN)
+    reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="incidents",
+                                    on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"[{self.severity}] {self.title}"
+
+
+class Update(models.Model):
+    incident = models.ForeignKey(Incident, related_name="updates", on_delete=models.CASCADE)
+    message = models.TextField()
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="updates",
+                               on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+
+class ActivityLog(models.Model):
+    """Written by the Kafka consumer, never by the API directly."""
+    event_type = models.CharField(max_length=40)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)</code></pre>
+<div class="note why"><span class="tag">Why related_name</span>
+<code>related_name="incidents"</code> and <code>related_name="updates"</code> are what make the nested
+serializers clean — you'll write <code>service.incidents</code> and <code>incident.updates</code> and
+DRF will nest them automatically. Get these names right now and step 4 is trivial.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="basics"><span class="num">3</span> · Serializers, ViewSets, routers</h2>
+<p>Stand up the plumbing first — flat serializers, ViewSets, and a router — so you have working CRUD
+before layering nesting and permissions on top.</p>
+<div class="task"><b>Your task:</b> a serializer per model, a ModelViewSet per resource, and a router
+wiring <code>/api/services/</code> and <code>/api/incidents/</code>.</div>
+<details><summary>Solution — starter serializers (flat) <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/serializers.py — first pass (steps 4-5 make these nested)</span>
+<pre><code class="language-python">from rest_framework import serializers
+from .models import Service, Incident, Update
+
+
+class UpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Update
+        fields = ["id", "incident", "message", "author", "created_at"]
+
+
+class IncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Incident
+        fields = ["id", "service", "title", "severity", "status",
+                  "reported_by", "created_at", "resolved_at"]
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ["id", "name", "description", "created_at"]</code></pre>
+</div></details>
+<details><summary>Solution — starter ViewSets <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/views.py — first pass (steps 7-9 add the permission ladder + actions)</span>
+<pre><code class="language-python">from rest_framework import viewsets
+from .models import Service, Incident
+from .serializers import ServiceSerializer, IncidentSerializer
+
+
+class ServiceViewSet(viewsets.ModelViewSet):
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+
+
+class IncidentViewSet(viewsets.ModelViewSet):
+    queryset = Incident.objects.all()
+    serializer_class = IncidentSerializer</code></pre>
+<div class="note why"><span class="tag">Build up, don't front-load</span>
+This gives you working CRUD on <code>/api/services/</code> and <code>/api/incidents/</code> right now —
+prove the wiring before adding complexity. Steps 4-5 upgrade the serializers to nest; steps 7-9 add the
+auth → staff → admin permission ladder. You'll replace these two files as you go, not write new ones.</div>
+</div></details>
+<details><summary>Solution — routing <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">config/urls.py</span>
+<pre><code class="language-python">from django.contrib import admin
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from incidents.views import ServiceViewSet, IncidentViewSet
+
+router = DefaultRouter()
+router.register("services", ServiceViewSet)
+router.register("incidents", IncidentViewSet)
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),
+    path("api-auth/", include("rest_framework.urls")),  # browsable-API login
+]</code></pre>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="nested-read"><span class="num">4</span> · Nested serializers — reading</h2>
+<p>The first half of nested serializers: <b>representation</b>. When you GET an incident, its updates
+should come back inline; when you GET a service, its incidents nest underneath.</p>
+<div class="task"><b>Your task:</b> build <code>UpdateSerializer</code>, an <code>IncidentSerializer</code>
+that nests updates read-only, and a <code>ServiceSerializer</code> that nests incidents.</div>
+<details><summary>Solution — read serializers <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/serializers.py — replace step 3's flat version with these nested ones</span>
+<pre><code class="language-python">from rest_framework import serializers
+from .models import Service, Incident, Update
+
+
+class UpdateSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source="author.username")
+
+    class Meta:
+        model = Update
+        fields = ["id", "message", "author", "created_at"]
+        read_only_fields = ["author", "created_at"]
+
+
+class IncidentSerializer(serializers.ModelSerializer):
+    updates = UpdateSerializer(many=True, read_only=True)        # &lt;-- nested read
+    reported_by = serializers.ReadOnlyField(source="reported_by.username")
+
+    class Meta:
+        model = Incident
+        fields = ["id", "service", "title", "severity", "status",
+                  "reported_by", "created_at", "resolved_at", "updates"]
+        read_only_fields = ["status", "reported_by", "created_at", "resolved_at", "updates"]
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    incidents = IncidentSerializer(many=True, read_only=True)    # &lt;-- nested read
+
+    class Meta:
+        model = Service
+        fields = ["id", "name", "description", "created_at", "incidents"]</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — N+1 queries</span>
+Nesting reads is easy to write and easy to make slow. Each nested serializer triggers extra queries
+per parent row. You'll fix this in the ViewSet with <code>select_related</code>/<code>prefetch_related</code>
+(step 8). Nesting without prefetching is the classic DRF performance trap.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="nested-write"><span class="num">5</span> · Nested serializers — writing</h2>
+<p>The hard half, and the part most tutorials dodge: <b>accepting</b> nested data. We want to open an
+incident <i>and</i> post its first update in a single POST. DRF won't do nested writes for you — you
+override <code>create()</code>.</p>
+<div class="task"><b>Your task:</b> an <code>IncidentCreateSerializer</code> that accepts an optional
+<code>updates</code> list and, in <code>create()</code>, makes the incident + each update, stamping the
+current user as owner/author.</div>
+<details><summary>Solution — write serializer with create() override <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/serializers.py — add this</span>
+<pre><code class="language-python">class IncidentCreateSerializer(serializers.ModelSerializer):
+    updates = UpdateSerializer(many=True, required=False)        # accept nested input
+
+    class Meta:
+        model = Incident
+        fields = ["id", "service", "title", "severity", "updates"]
+
+    def create(self, validated_data):
+        updates_data = validated_data.pop("updates", [])
+        user = self.context["request"].user                      # who's making the call
+        incident = Incident.objects.create(reported_by=user, **validated_data)
+        for update in updates_data:
+            Update.objects.create(incident=incident, author=user, **update)
+        return incident</code></pre>
+<div class="note why"><span class="tag">Why a separate create serializer</span>
+Reading and writing want different shapes — reads nest full objects and expose status/timestamps;
+writes accept only what the client may set and pull the user from the request, not the payload.
+Splitting them (and selecting per-action in the ViewSet) is cleaner than one serializer bristling with
+conditionals. Note we get the user from <code>self.context["request"]</code> — DRF injects that
+automatically, so the client can never spoof ownership by sending a <code>reported_by</code> field.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="auth"><span class="num">6</span> · Authentication</h2>
+<p>We set Session + Basic auth in step 1, so this step is mostly conceptual + creating users to test
+with. The browsable API gives you a login link (from <code>api-auth/</code>); Basic auth lets you
+<code>curl -u user:pass</code>.</p>
+<div class="task"><b>Your task:</b> migrate, then create four users — a normal user, another normal
+user, a staff member, and a superuser — so you can test every rung of the ladder.</div>
+<details><summary>Solution — migrate + make test users <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">uv run python manage.py makemigrations
+uv run python manage.py migrate
+
+# Open a shell and mint the cast of characters
+uv run python manage.py shell -c "
+from django.contrib.auth import get_user_model; U=get_user_model()
+U.objects.create_user('alice', password='pw')                 # normal user
+U.objects.create_user('bob',   password='pw')                 # another user
+U.objects.create_user('sam',   password='pw', is_staff=True)  # staff / responder
+U.objects.create_superuser('root', password='pw')             # admin
+print('users created')
+"</code></pre>
+<div class="note why"><span class="tag">Staff vs superuser</span>
+Two independent flags on the user: <code>is_staff</code> (can access the Django admin / your
+"responder" tier) and <code>is_superuser</code> (full god mode / your "admin" tier). They're separate
+on purpose — you'll key the two highest rungs of the ladder off these exact flags.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="perms"><span class="num">7</span> · Public-read / auth-write + ownership</h2>
+<p>Now the ladder. Rung 1-2: anyone reads, logged-in users write, and a user can only edit/delete
+their <b>own</b> incident. That last bit is an <i>object-level</i> permission.</p>
+<div class="task"><b>Your task:</b> write an <code>IsOwnerOrReadOnly</code> object permission, then a
+<code>IncidentViewSet</code> that uses it plus <code>IsAuthenticatedOrReadOnly</code>, selects the
+create serializer for creates, and prefetches to kill the N+1.</div>
+<details><summary>Solution — custom permissions <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/permissions.py</span>
+<pre><code class="language-python">from rest_framework import permissions
+
+
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """Anyone may read; only the owner may modify."""
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        owner = getattr(obj, "reported_by", None) or getattr(obj, "author", None)
+        return owner == request.user
+
+
+class IsStaffMember(permissions.BasePermission):
+    """Responder tier."""
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_staff)
+
+
+class IsSuperuserOrReadOnly(permissions.BasePermission):
+    """Admin tier — superuser writes, everyone reads."""
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_superuser)</code></pre>
+</div></details>
+<details><summary>Solution — IncidentViewSet <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/views.py — the full IncidentViewSet (replaces step 3's starter)</span>
+<pre><code class="language-python">from django.utils import timezone
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import Service, Incident
+from .serializers import (ServiceSerializer, IncidentSerializer,
+                          IncidentCreateSerializer, UpdateSerializer)
+from .permissions import IsOwnerOrReadOnly, IsStaffMember, IsSuperuserOrReadOnly
+from .kafka import publish_event
+
+
+class IncidentViewSet(viewsets.ModelViewSet):
+    queryset = (Incident.objects
+                .select_related("service", "reported_by")
+                .prefetch_related("updates__author"))           # kills the N+1
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+    def get_serializer_class(self):
+        return IncidentCreateSerializer if self.action == "create" else IncidentSerializer
+
+    def perform_create(self, serializer):
+        incident = serializer.save()                            # owner set in serializer.create()
+        publish_event("incident.opened", {
+            "id": incident.id, "service": incident.service_id,
+            "severity": incident.severity, "title": incident.title,
+        })</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — when object permissions fire</span>
+<code>has_object_permission</code> only runs on detail actions that call <code>get_object()</code>
+(retrieve/update/destroy). It does <b>not</b> run on <code>list</code> or <code>create</code> — list
+filtering and "who can create" are <code>has_permission</code>'s job. Mixing these up is the #1 reason
+people think their permission "isn't working."</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="staff"><span class="num">8</span> · Staff checks — the moderation action</h2>
+<p>Rung 3: responders (staff) drive incidents — they post updates to the timeline and resolve. These
+aren't plain CRUD on the incident, they're <b>custom actions</b> with their own permission.</p>
+<div class="task"><b>Your task:</b> add two <code>@action</code> endpoints to the ViewSet —
+<code>POST /api/incidents/{id}/updates/</code> and <code>POST /api/incidents/{id}/resolve/</code> —
+both gated to staff, both firing a Kafka event.</div>
+<details><summary>Solution — staff actions <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/views.py — add inside IncidentViewSet</span>
+<pre><code class="language-python">    @action(detail=True, methods=["post"],
+            permission_classes=[permissions.IsAuthenticated, IsStaffMember])
+    def updates(self, request, pk=None):
+        """Staff posts an update to the incident timeline."""
+        incident = self.get_object()
+        serializer = UpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        update = serializer.save(incident=incident, author=request.user)
+        publish_event("incident.updated", {"id": incident.id, "message": update.message})
+        return Response(UpdateSerializer(update).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"],
+            permission_classes=[permissions.IsAuthenticated, IsStaffMember])
+    def resolve(self, request, pk=None):
+        """Staff resolves the incident."""
+        incident = self.get_object()
+        incident.status = Incident.Status.RESOLVED
+        incident.resolved_at = timezone.now()
+        incident.save(update_fields=["status", "resolved_at"])
+        publish_event("incident.resolved", {"id": incident.id})
+        return Response({"status": "resolved"})</code></pre>
+<div class="note why"><span class="tag">Why per-action permissions</span>
+<code>permission_classes</code> on an <code>@action</code> override the ViewSet's defaults for just that
+endpoint. So owning an incident lets you edit its fields, but only staff can drive the timeline — two
+different powers on the same object, expressed cleanly. This is exactly how you model "the reporter
+opened it, but on-call runs it."</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="admin"><span class="num">9</span> · Admin checks</h2>
+<p>Rung 4: only admins (superusers) manage the catalog of <code>Service</code>s. Everyone else reads.</p>
+<div class="task"><b>Your task:</b> a <code>ServiceViewSet</code> guarded by
+<code>IsSuperuserOrReadOnly</code>.</div>
+<details><summary>Solution — ServiceViewSet <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/views.py — add</span>
+<pre><code class="language-python">class ServiceViewSet(viewsets.ModelViewSet):
+    queryset = Service.objects.prefetch_related("incidents__updates")
+    serializer_class = ServiceSerializer
+    permission_classes = [IsSuperuserOrReadOnly]</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — DRF's IsAdminUser is a trap</span>
+DRF ships <code>permissions.IsAdminUser</code> — but it checks <code>is_staff</code>, NOT
+<code>is_superuser</code>. So "admin" in DRF means "staff." Because we want a real distinction between
+staff and admin, we wrote our own <code>IsSuperuserOrReadOnly</code> keyed on <code>is_superuser</code>.
+If you'd used the built-in, your staff would've had admin powers by accident — a real-world security bug.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="tests"><span class="num">10</span> · The permission-matrix tests</h2>
+<p>This is the payoff section. The whole value of a permission ladder is that it's <b>correct</b> — so
+you test the matrix: every role against every action gets the right 200 / 401 / 403.</p>
+<div class="task"><b>Your task:</b> an <code>APITestCase</code> that creates all four roles and asserts:
+anon can read but not write, a user can open an incident but not resolve it, only the owner can edit,
+only staff can resolve, only admin can create a service.</div>
+<details><summary>Solution — <code>incidents/tests.py</code> <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/tests.py</span>
+<pre><code class="language-python">from django.contrib.auth import get_user_model
+from rest_framework import status
+from rest_framework.test import APITestCase
+from .models import Service, Incident
+
+User = get_user_model()
+
+
+class PermissionMatrix(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.alice = User.objects.create_user("alice", password="pw")
+        cls.bob = User.objects.create_user("bob", password="pw")
+        cls.sam = User.objects.create_user("sam", password="pw", is_staff=True)
+        cls.root = User.objects.create_superuser("root", password="pw")
+        cls.svc = Service.objects.create(name="API Gateway")
+
+    def _incident(self, owner):
+        return Incident.objects.create(service=self.svc, title="DB down",
+                                       severity="SEV1", reported_by=owner)
+
+    def test_anonymous_reads_but_cannot_write(self):
+        self.assertEqual(self.client.get("/api/incidents/").status_code, 200)
+        r = self.client.post("/api/incidents/", {"service": self.svc.id, "title": "x"}, format="json")
+        self.assertIn(r.status_code, (401, 403))
+
+    def test_user_can_open_incident(self):
+        self.client.force_authenticate(self.alice)
+        r = self.client.post("/api/incidents/",
+                             {"service": self.svc.id, "title": "Latency spike", "severity": "SEV2"},
+                             format="json")
+        self.assertEqual(r.status_code, 201)
+
+    def test_only_owner_can_edit(self):
+        inc = self._incident(self.alice)
+        self.client.force_authenticate(self.bob)                 # not the owner
+        r = self.client.patch(f"/api/incidents/{inc.id}/", {"title": "hijack"}, format="json")
+        self.assertEqual(r.status_code, 403)
+
+    def test_only_staff_can_resolve(self):
+        inc = self._incident(self.alice)
+        self.client.force_authenticate(self.alice)               # owner, but not staff
+        self.assertEqual(self.client.post(f"/api/incidents/{inc.id}/resolve/").status_code, 403)
+        self.client.force_authenticate(self.sam)                 # staff
+        self.assertEqual(self.client.post(f"/api/incidents/{inc.id}/resolve/").status_code, 200)
+
+    def test_only_admin_creates_service(self):
+        self.client.force_authenticate(self.sam)                 # staff is not enough
+        self.assertEqual(self.client.post("/api/services/", {"name": "Cache"}, format="json").status_code, 403)
+        self.client.force_authenticate(self.root)                # admin
+        self.assertEqual(self.client.post("/api/services/", {"name": "Cache"}, format="json").status_code, 201)</code></pre>
+<pre><code class="language-bash">uv run python manage.py test incidents</code></pre>
+<div class="note why"><span class="tag">Why this matters</span>
+A permission bug doesn't throw an error — it silently lets the wrong person do the wrong thing. The
+matrix test is the only thing that proves your ladder actually holds. This is also the single most
+impressive thing to show in a code review or interview: "here's the access model, and here's the test
+suite that enforces it."</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="kafka-pub"><span class="num">11</span> · Kafka — publish incident events</h2>
+<p>You've already been calling <code>publish_event(...)</code> in the views. Now write it. Every
+incident lifecycle change emits an event — fire-and-forget, never blocking the API response.</p>
+<div class="task"><b>Your task:</b> a <code>publish_event</code> helper using <code>confluent-kafka</code>,
+bootstrap server from env, to topic <code>incident-events</code>.</div>
+<details><summary>Solution — <code>incidents/kafka.py</code> <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/kafka.py</span>
+<pre><code class="language-python">import json
+import os
+from confluent_kafka import Producer
+
+_producer = Producer({
+    "bootstrap.servers": os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+    "client.id": "incident-api",
+})
+TOPIC = "incident-events"
+
+
+def publish_event(event_type: str, data: dict) -> None:
+    payload = {"type": event_type, "data": data}
+    try:
+        _producer.produce(TOPIC, key=str(data.get("id", "")), value=json.dumps(payload))
+        _producer.poll(0)            # service delivery callbacks without blocking
+    except BufferError:
+        pass                          # never fail an API request over telemetry</code></pre>
+<div class="note why"><span class="tag">Why keyed by incident id</span>
+Keying on the incident id sends all events for one incident to the same partition, preserving their
+order (opened → updated → resolved) even when you scale consumers. And we swallow errors — the API's
+job is to respond fast; analytics/notifications are the consumer's problem.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="kafka-con"><span class="num">12</span> · Kafka consumer — activity feed</h2>
+<p>A separate process consumes <code>incident-events</code> and writes an <code>ActivityLog</code> (and
+in real life, fires Slack/PagerDuty notifications). The API never does this work — that's the decoupling.</p>
+<div class="task"><b>Your task:</b> a management command <code>consume_events</code> that reads the topic
+and records each event, ignoring the harmless "topic not ready yet" blip.</div>
+<details><summary>Solution — <code>incidents/management/commands/consume_events.py</code> <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/management/commands/consume_events.py</span>
+<pre><code class="language-python"># Create the empty package files first:
+#   incidents/management/__init__.py
+#   incidents/management/commands/__init__.py
+import json
+import os
+from confluent_kafka import Consumer, KafkaError
+from django.core.management.base import BaseCommand
+from incidents.models import ActivityLog
+
+
+class Command(BaseCommand):
+    help = "Consume incident-events and build the activity feed."
+
+    def handle(self, *args, **options):
+        consumer = Consumer({
+            "bootstrap.servers": os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+            "group.id": "incident-processor",
+            "auto.offset.reset": "earliest",
+        })
+        consumer.subscribe(["incident-events"])
+        self.stdout.write(self.style.SUCCESS("Listening on incident-events..."))
+        try:
+            while True:
+                msg = consumer.poll(1.0)
+                if msg is None:
+                    continue
+                if msg.error():
+                    if msg.error().code() == KafkaError._UNKNOWN_TOPIC_OR_PART:
+                        continue       # topic not created until first publish — harmless
+                    self.stderr.write(f"Kafka error: {msg.error()}")
+                    continue
+                event = json.loads(msg.value())
+                ActivityLog.objects.create(event_type=event["type"], payload=event["data"])
+                self.stdout.write(f"🔔 {event['type']} → {event['data']}")
+        finally:
+            consumer.close()</code></pre>
+<div class="note why"><span class="tag">Why a consumer group</span>
+<code>group.id="incident-processor"</code> means you can run one replica (it gets everything) or three
+(Kafka splits the partitions across them) with zero code change. Add a <i>second</i> group later — say
+<code>"slack-notifier"</code> — and it gets its own independent copy of the whole event stream. That
+fan-out is why incidents go through Kafka instead of a direct function call.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="runlocal"><span class="num">13</span> · Run & test it locally</h2>
+<p>Before you containerize anything, prove the whole thing works on your machine — the API, the
+permission ladder, and the Kafka round-trip. Tight feedback loop first; Kubernetes later.</p>
+
+<div class="task"><b>First, a settings fix:</b> the app still defaults to SQLite. Point it at Postgres
+via env vars so the <i>same</i> settings work locally and in the cluster.</div>
+<details><summary>Solution — env-driven database <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">config/settings.py — replace the DATABASES block</span>
+<pre><code class="language-python">import os
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "incidents"),
+        "USER": os.environ.get("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+    }
+}
+
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")</code></pre>
+<div class="note why"><span class="tag">Why env-driven</span>
+One settings file, every environment. Locally these defaults hit the Postgres container you start
+below; in Kubernetes the ConfigMap + Secret inject the real values with zero code change (12-factor
+config). It's why the k8s deploy in step 15 just works.</div>
+</div></details>
+
+<div class="task"><b>Your task:</b> start local Postgres + Kafka, migrate, run the server, then exercise
+every rung of the permission ladder with curl.</div>
+<details><summary>Solution — start infra + run the server <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Postgres (matches the settings defaults above)
+podman run -d --name pg -e POSTGRES_DB=incidents -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
+
+# Kafka (official Apache image — single-node localhost, no env needed)
+podman run -d --name kafka -p 9092:9092 apache/kafka:3.8.0
+
+uv run python manage.py migrate
+# (create the four test users from step 6 if you haven't already)
+uv run python manage.py runserver</code></pre>
+</div></details>
+<details><summary>Solution — exercise the permission ladder <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Anonymous: can read, cannot write
+curl -s http://localhost:8000/api/incidents/
+curl -s -X POST http://localhost:8000/api/incidents/ \
+  -H "Content-Type: application/json" -d '{"service":1,"title":"x"}'        # 403
+
+# Admin (root = superuser) creates a service
+curl -s -u root:pw -X POST http://localhost:8000/api/services/ \
+  -H "Content-Type: application/json" -d '{"name":"API Gateway"}'
+
+# User (alice) opens an incident WITH a nested update
+curl -s -u alice:pw -X POST http://localhost:8000/api/incidents/ \
+  -H "Content-Type: application/json" \
+  -d '{"service":1,"title":"DB down","severity":"SEV1","updates":[{"message":"investigating"}]}'
+
+# Non-owner (bob) can't edit it -> 403
+curl -s -u bob:pw -X PATCH http://localhost:8000/api/incidents/1/ \
+  -H "Content-Type: application/json" -d '{"title":"hijack"}'
+
+# Only staff (sam) can resolve -> 200; alice (owner, not staff) -> 403
+curl -s -u sam:pw -X POST http://localhost:8000/api/incidents/1/resolve/</code></pre>
+<div class="note why"><span class="tag">Watch both halves of the system</span>
+In a second terminal run <code>uv run python manage.py consume_events</code> and watch the 🔔 lines
+appear as you open and resolve incidents. That's the Kafka round-trip working end to end — the producer
+(API) and consumer (worker) talking through the broker, exactly what you'll deploy next.</div>
+</div></details>
+
+<div class="task"><b>Then run the suite</b> — the permission matrix from step 10 plus the deeper tests
+from step 17.</div>
+<details><summary>Solution — run the tests <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">uv run python manage.py test incidents -v 2</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — tests need Postgres, not Kafka</span>
+Django builds a temporary test database on the same engine as your <code>DATABASES</code> setting, so
+the <code>pg</code> container must be running. Your tests mock the Kafka producer, so the broker is
+<i>not</i> needed for the test run — only Postgres is.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="docker"><span class="num">14</span> · Containerize (uv)</h2>
+<p>One image, two roles: the API (gunicorn) and the consumer (<code>manage.py consume_events</code>).</p>
+<details><summary>Solution — <code>Dockerfile</code> <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">Dockerfile</span>
+<pre><code class="language-docker">FROM python:3.12-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]</code></pre>
+<div class="note gotcha"><span class="tag">Podman name gotcha</span>
+Building with Podman tags the image <code>localhost/incident-api:dev</code> (note the
+<code>localhost/</code> prefix). Your k8s manifests must reference that exact name, or pods fail with
+ImagePullBackOff. With Docker it's just <code>incident-api:dev</code>. Pick one and keep manifests +
+build tag in sync.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="k8s"><span class="num">15</span> · Deploy to Kubernetes</h2>
+<p>Same shape as any real microservice: Postgres + Kafka + the API + the consumer, plus a migrate Job
+and config/secrets. These mirror the patterns from the URL-shortener project; the manifests below are
+the incident-API versions.</p>
+<div class="task"><b>Your task:</b> write manifests for Postgres, Kafka (KRaft), a ConfigMap + Secret, a
+migrate Job (with an init-container that waits for the DB), the API Deployment + Service, and the
+consumer Deployment. Then apply and port-forward.</div>
+<details><summary>Solution — infra: Postgres + Kafka <span class="kind">manifest</span></summary>
+<div class="body">
+<span class="path">k8s/infra.yaml</span>
+<pre><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata: { name: pg-secret }
+type: Opaque
+stringData: { POSTGRES_DB: incidents, POSTGRES_USER: postgres, POSTGRES_PASSWORD: supersecret }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: postgres }
+spec:
+  selector: { matchLabels: { app: postgres } }
+  template:
+    metadata: { labels: { app: postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          envFrom: [{ secretRef: { name: pg-secret } }]
+          ports: [{ containerPort: 5432 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: postgres }
+spec: { selector: { app: postgres }, ports: [{ port: 5432, targetPort: 5432 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: kafka }
+spec:
+  selector: { matchLabels: { app: kafka } }
+  template:
+    metadata: { labels: { app: kafka } }
+    spec:
+      containers:
+        - name: kafka
+          image: apache/kafka:3.8.0          # official Apache image (not bitnami)
+          ports: [{ containerPort: 9092 }]
+          env:
+            - { name: KAFKA_NODE_ID, value: "0" }
+            - { name: KAFKA_PROCESS_ROLES, value: "broker,controller" }
+            - { name: KAFKA_CONTROLLER_QUORUM_VOTERS, value: "0@localhost:9093" }
+            - { name: KAFKA_LISTENERS, value: "PLAINTEXT://:9092,CONTROLLER://:9093" }
+            - { name: KAFKA_ADVERTISED_LISTENERS, value: "PLAINTEXT://kafka:9092" }
+            - { name: KAFKA_CONTROLLER_LISTENER_NAMES, value: "CONTROLLER" }
+            - { name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP, value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT" }
+            - { name: KAFKA_INTER_BROKER_LISTENER_NAME, value: "PLAINTEXT" }
+            - { name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, value: "1" }
+            - { name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, value: "1" }
+            - { name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR, value: "1" }
+            - { name: KAFKA_AUTO_CREATE_TOPICS_ENABLE, value: "true" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: kafka }
+spec: { selector: { app: kafka }, ports: [{ port: 9092, targetPort: 9092 }] }</code></pre>
+</div></details>
+<details><summary>Solution — app: config, migrate Job, API, consumer <span class="kind">manifest</span></summary>
+<div class="body">
+<span class="path">k8s/app.yaml</span>
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata: { name: app-config }
+data:
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "incidents"
+  POSTGRES_USER: "postgres"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  ALLOWED_HOSTS: "*"
+  DJANGO_SETTINGS_MODULE: "config.settings"
+---
+apiVersion: batch/v1
+kind: Job
+metadata: { name: migrate }
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          command: ["sh","-c","until pg_isready -h postgres -p 5432 -U postgres; do echo waiting; sleep 2; done"]
+      containers:
+        - name: migrate
+          image: localhost/incident-api:dev     # match your build engine's name
+          imagePullPolicy: IfNotPresent
+          command: ["python","manage.py","migrate","--noinput"]
+          envFrom: [{ configMapRef: { name: app-config } }, { secretRef: { name: pg-secret } }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+        - name: api
+          image: localhost/incident-api:dev
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8000 }]
+          envFrom: [{ configMapRef: { name: app-config } }, { secretRef: { name: pg-secret } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: api }
+spec: { selector: { app: api }, ports: [{ port: 80, targetPort: 8000 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: consumer }
+spec:
+  selector: { matchLabels: { app: consumer } }
+  template:
+    metadata: { labels: { app: consumer } }
+    spec:
+      containers:
+        - name: consumer
+          image: localhost/incident-api:dev
+          imagePullPolicy: IfNotPresent
+          command: ["python","manage.py","consume_events"]
+          envFrom: [{ configMapRef: { name: app-config } }, { secretRef: { name: pg-secret } }]</code></pre>
+</div></details>
+<details><summary>Solution — build, load, apply, test <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">kind create cluster --name incidents --wait 90s
+kubectl create namespace incidents && kubectl config set-context --current --namespace=incidents
+
+# Build + load (Podman shown; for Docker drop the provider line and the localhost/ prefix)
+export KIND_EXPERIMENTAL_PROVIDER=podman
+podman build -t incident-api:dev .
+podman save localhost/incident-api:dev -o img.tar
+kind load image-archive img.tar --name incidents
+
+kubectl apply -f k8s/infra.yaml
+kubectl wait --for=condition=available deploy/postgres deploy/kafka --timeout=180s
+kubectl apply -f k8s/app.yaml
+kubectl wait --for=condition=complete job/migrate --timeout=180s
+
+kubectl port-forward service/api 8000:80
+# Now exercise the ladder: read anonymously, then -u alice:pw to open an incident,
+# -u sam:pw to resolve it, -u root:pw to create a service. Watch the consumer:
+kubectl logs -f deploy/consumer</code></pre>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="argo"><span class="num">16</span> · Bonus: Argo CD / GitOps</h2>
+<p>This is the piece from your work stack. Instead of running <code>kubectl apply</code> by hand, Argo
+CD watches a git repo and continuously syncs the cluster to match it. Git becomes the source of truth.</p>
+<div class="task"><b>Your task:</b> install Argo CD into the cluster, then declare an Application that
+points at your <code>k8s/</code> folder on GitHub. Change a manifest, commit, and watch Argo deploy it.</div>
+<details><summary>Solution — install + Application <span class="kind">commands + manifest</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Install Argo CD
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl -n argocd rollout status deploy/argocd-server
+
+# Get the admin password + open the UI
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+kubectl -n argocd port-forward svc/argocd-server 8080:443   # https://localhost:8080 (user: admin)</code></pre>
+<span class="path">argocd-app.yaml — the GitOps declaration</span>
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: incident-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/&lt;you&gt;/incident-api.git
+    targetRevision: main
+    path: k8s                       # the folder holding infra.yaml + app.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: incidents
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }    # auto-deploy on commit, fix drift
+    syncOptions: [CreateNamespace=true]</code></pre>
+<pre><code class="language-bash">kubectl apply -f argocd-app.yaml
+# Now edit k8s/app.yaml (e.g. bump api replicas to 3), commit, push —
+# Argo CD detects the change and syncs the cluster automatically. No kubectl apply.</code></pre>
+<div class="note why"><span class="tag">Why GitOps clicks here</span>
+<code>selfHeal: true</code> means if someone hand-edits the live cluster, Argo CD reverts it back to git.
+<code>prune: true</code> means deleting a manifest from git deletes it from the cluster. Your repo
+becomes the exact, auditable state of production — which is why every serious k8s shop (yours included)
+runs this instead of hand-applying.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<!-- ============================================================= -->
+<h2 id="testing2"><span class="num">17</span> · More testing: mocks, the consumer & CI</h2>
+<p>Section 10 proved the permission ladder. A real suite covers the rest: the nested-write behavior,
+the Kafka calls (without a live broker), the consumer's logic, and a CI pipeline that runs it all on
+every push. This is the section that turns "it works on my machine" into "it's verified."</p>
+
+<div class="task"><b>Your task:</b> test that a nested-write POST creates the updates and stamps the
+owner from the request (and that a client can't spoof ownership).</div>
+<details><summary>Solution — serializer / nested-write tests <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/tests.py — add</span>
+<pre><code class="language-python">class SerializerTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.alice = User.objects.create_user("alice", password="pw")
+        cls.bob = User.objects.create_user("bob", password="pw")
+        cls.svc = Service.objects.create(name="API Gateway")
+
+    def test_create_incident_with_nested_updates(self):
+        self.client.force_authenticate(self.alice)
+        payload = {
+            "service": self.svc.id, "title": "DB down", "severity": "SEV1",
+            "updates": [{"message": "investigating"}, {"message": "rolling back"}],
+        }
+        r = self.client.post("/api/incidents/", payload, format="json")
+        self.assertEqual(r.status_code, 201)
+        inc = Incident.objects.get(id=r.data["id"])
+        self.assertEqual(inc.updates.count(), 2)
+        self.assertEqual(inc.reported_by, self.alice)        # owner stamped from request
+
+    def test_client_cannot_spoof_owner(self):
+        self.client.force_authenticate(self.alice)
+        r = self.client.post("/api/incidents/",
+            {"service": self.svc.id, "title": "x", "reported_by": self.bob.id}, format="json")
+        self.assertEqual(r.status_code, 201)
+        # reported_by came from the request user, NOT the payload:
+        self.assertEqual(Incident.objects.get(id=r.data["id"]).reported_by, self.alice)</code></pre>
+<div class="note why"><span class="tag">Why test the spoof case</span>
+The "can't spoof owner" test guards a real security property. Someone <i>will</i> try sending
+<code>reported_by</code> in the payload; this proves your serializer ignores it and trusts the
+authenticated request instead. Tests like this document your security decisions.</div>
+</div></details>
+
+<div class="task"><b>Your task:</b> verify incidents publish Kafka events — without a running broker.
+Mock it.</div>
+<details><summary>Solution — mocking Kafka <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/tests.py — add</span>
+<pre><code class="language-python">from unittest.mock import patch
+
+
+class EventPublishingTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.alice = User.objects.create_user("alice", password="pw")
+        cls.sam = User.objects.create_user("sam", password="pw", is_staff=True)
+        cls.svc = Service.objects.create(name="API Gateway")
+
+    @patch("incidents.views.publish_event")          # patch where it's USED
+    def test_opening_incident_publishes_event(self, mock_publish):
+        self.client.force_authenticate(self.alice)
+        self.client.post("/api/incidents/",
+            {"service": self.svc.id, "title": "DB down", "severity": "SEV1"}, format="json")
+        mock_publish.assert_called_once()
+        event_type, _data = mock_publish.call_args.args
+        self.assertEqual(event_type, "incident.opened")
+
+    @patch("incidents.views.publish_event")
+    def test_resolving_publishes_event(self, mock_publish):
+        inc = Incident.objects.create(service=self.svc, title="x", reported_by=self.alice)
+        self.client.force_authenticate(self.sam)
+        self.client.post(f"/api/incidents/{inc.id}/resolve/")
+        mock_publish.assert_called_with("incident.resolved", {"id": inc.id})</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — patch where it's USED, not defined</span>
+We patch <code>incidents.views.publish_event</code>, not <code>incidents.kafka.publish_event</code>.
+Because <code>views.py</code> did <code>from .kafka import publish_event</code>, the name lives in the
+views module's namespace — that's the reference your view actually calls. Patching the original in
+<code>kafka.py</code> would do nothing. This trips up everyone the first time. Mocking it also means
+your tests never need a real Kafka broker — fast and hermetic.</div>
+</div></details>
+
+<div class="task"><b>Your task:</b> the consumer loops forever on a real broker — untestable as-is.
+Pull its logic into a pure function and test that directly.</div>
+<details><summary>Solution — refactor for testability + test <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">incidents/events.py (new) — the testable core</span>
+<pre><code class="language-python">import json
+from incidents.models import ActivityLog
+
+
+def record_event(raw_value: str) -> ActivityLog:
+    """Pure-ish logic: take a raw Kafka message value, write an ActivityLog."""
+    event = json.loads(raw_value)
+    return ActivityLog.objects.create(event_type=event["type"], payload=event["data"])</code></pre>
+<span class="path">incidents/management/commands/consume_events.py — call it in the loop</span>
+<pre><code class="language-python">from incidents.events import record_event
+# ...inside the poll loop, replacing the inline ActivityLog.objects.create(...):
+                record_event(msg.value())</code></pre>
+<span class="path">incidents/tests.py — test the logic with no Kafka at all</span>
+<pre><code class="language-python">from django.test import TestCase
+from incidents.events import record_event
+from incidents.models import ActivityLog
+
+
+class ConsumerLogicTests(TestCase):
+    def test_record_event_writes_activity_log(self):
+        log = record_event('{"type": "incident.opened", "data": {"id": 1}}')
+        self.assertEqual(log.event_type, "incident.opened")
+        self.assertEqual(ActivityLog.objects.count(), 1)</code></pre>
+<div class="note why"><span class="tag">The pattern: separate I/O from logic</span>
+The Kafka <code>while True</code> loop is I/O — hard to test. The <i>decision</i> (parse → write) is
+logic — easy to test. Pulling the logic into <code>record_event()</code> lets you unit-test the part
+that matters without spinning up a broker. This "thin I/O shell around testable logic" pattern applies
+everywhere — it's one of the highest-leverage testing habits you can build.</div>
+</div></details>
+
+<div class="task"><b>Your task:</b> measure coverage, then run the whole suite in CI on every push.</div>
+<details><summary>Solution — coverage + GitHub Actions CI <span class="kind">code</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Coverage locally
+uv add --dev coverage
+uv run coverage run manage.py test
+uv run coverage report -m          # shows untested lines per file</code></pre>
+<span class="path">.github/workflows/ci.yml</span>
+<pre><code class="language-yaml">name: tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: incidents
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: localhost:9092   # never hit (Kafka is mocked in tests)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run python manage.py test</code></pre>
+<div class="note why"><span class="tag">Why CI matters here</span>
+The workflow spins up a real Postgres as a service container but needs no Kafka, because you mocked the
+producer in tests — so the suite is fast and reliable in CI. Now every push to GitHub runs your full
+permission matrix + serializer + event + consumer tests automatically. This is the same discipline your
+work team runs, and it pairs perfectly with the Argo CD section: tests gate the merge, GitOps deploys
+the result.</div>
+<div class="note gotcha"><span class="tag">Tip — split tests as they grow</span>
+One <code>tests.py</code> gets unwieldy fast. Convert it to a <code>tests/</code> package
+(<code>test_permissions.py</code>, <code>test_serializers.py</code>, <code>test_events.py</code>) with
+an <code>__init__.py</code> — Django/pytest discover them the same way. And if you want cleaner test
+data, <code>factory_boy</code> + <code>pytest-django</code> are the modern combo worth graduating to.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="recap"><span class="num">18</span> · Recap & extensions</h2>
+<p>You built a production-shaped service. Make sure you can explain each piece — that's the real win:</p>
+<ul class="clean">
+  <li><b>Nested serializers</b> — reading (inline representation) and writing (the <code>create()</code> override).</li>
+  <li><b>The permission ladder</b> — <code>IsAuthenticatedOrReadOnly</code>, object-level ownership, staff via per-action permissions, admin via a superuser check (and why DRF's <code>IsAdminUser</code> is a trap).</li>
+  <li><b>Permission-matrix testing</b> — proving the access model with <code>APITestCase</code>.</li>
+  <li><b>Kafka</b> — fire-and-forget producing, a consumer group building an activity feed, decoupled from the API.</li>
+  <li><b>Kubernetes + Argo CD</b> — one image two roles, infra + app manifests, and GitOps sync.</li>
+</ul>
+<h3>Extensions</h3>
+<ul class="clean">
+  <li>Add a public status endpoint that derives each service's health from its open incidents.</li>
+  <li>Add a second consumer group (<code>slack-notifier</code>) to feel Kafka fan-out.</li>
+  <li>Add token or JWT auth (<code>rest_framework.authtoken</code> or SimpleJWT) for API clients.</li>
+  <li>Add filtering/pagination (django-filter) — list incidents by service, severity, status.</li>
+  <li>Add an HPA on the <code>api</code> Deployment and watch it scale under load.</li>
+  <li>Move secrets out of plain manifests into Sealed Secrets or an external secrets operator.</li>
+</ul>
+
+<footer>
+  Self-paced build · Django REST Framework · Apache Kafka · Kubernetes · Argo CD.<br>
+  Tip: hit <kbd>Expand all</kbd> after you've attempted a section to review every solution at once.
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  try { if (window.hljs) hljs.highlightAll(); } catch (e) {}
+
+  const all = () => document.querySelectorAll("details");
+  document.getElementById("expandAll").onclick = () => all().forEach(d => d.open = true);
+  document.getElementById("collapseAll").onclick = () => all().forEach(d => d.open = false);
+
+  // Copy buttons on every code block (textContent preserves whitespace).
+  document.querySelectorAll("pre").forEach((pre) => {
+    const btn = document.createElement("button");
+    btn.className = "copy-btn"; btn.type = "button"; btn.textContent = "Copy";
+    btn.addEventListener("click", () => {
+      const code = pre.querySelector("code") || pre;
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = "Copied"; btn.classList.add("done");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>
