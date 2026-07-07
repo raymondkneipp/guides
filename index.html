@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guides</title>
+<style>
+  :root { --bg:#0b0f17; --panel:#141a24; --line:#242e3d; --fg:#e7edf5; --dim:#93a1b5; --accent:#5b9dff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:48px 20px 96px; }
+  h1 { font-size:30px; margin:0 0 4px; }
+  .lede { color:var(--dim); margin:0 0 28px; }
+  a.card { display:block; text-decoration:none; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:12px 0; transition:border-color .15s; }
+  a.card:hover { border-color:var(--accent); }
+  a.card .t { color:var(--fg); font-size:18px; font-weight:600; }
+  a.card .d { color:var(--dim); font-size:14px; margin-top:5px; }
+  .foot { color:var(--dim); font-size:13px; margin-top:40px; }
+  .foot a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Guides</h1>
+  <p class="lede">Build guides &amp; references. Written by Otto.</p>
+
+  <a class="card" href="./django-drf-labels.html">
+    <div class="t">📘 Django + DRF — Applications &amp; Labels</div>
+    <div class="d">A DRF API where users create Applications with many unique Labels, admins gate an <code>is_protected</code> flag, and labels are get-or-created inline on app create.</div>
+  </a>
+
+  <p class="foot">Hosted on GitHub Pages.</p>
+</div>
+</body>
+</html>

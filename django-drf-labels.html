@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide · Django + DRF: Applications & Labels</title>
+<style>
+  :root { --bg:#0b0f17; --panel:#141a24; --line:#242e3d; --fg:#e7edf5; --dim:#93a1b5; --accent:#5b9dff; --green:#3ecf8e; --amber:#f0b429; --code:#0e141f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:32px 20px 96px; }
+  h1 { font-size:28px; line-height:1.2; margin:0 0 6px; }
+  h2 { font-size:21px; margin:38px 0 12px; padding-top:14px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:24px 0 8px; color:var(--accent); }
+  p, li { color:#d6deea; }
+  .lede { color:var(--dim); font-size:16px; margin-top:0; }
+  code { background:var(--code); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cde3ff; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:12px 0; }
+  pre code { background:none; border:0; padding:0; color:#dbe7f5; display:block; white-space:pre; }
+  .tok-c { color:#6b7a8f; font-style:italic; }
+  .note { border-left:3px solid var(--accent); background:#111a28; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .rule { border-left:3px solid var(--amber); background:#1b1710; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .ok { border-left:3px solid var(--green); background:#0f1a15; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .toc { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:20px 0; }
+  .toc ol { margin:6px 0 0; padding-left:20px; }
+  .toc a { color:var(--accent); text-decoration:none; }
+  .toc a:hover { text-decoration:underline; }
+  .path { color:var(--dim); font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 -6px; }
+  b, strong { color:#fff; }
+  a { color:var(--accent); }
+  hr { border:0; border-top:1px solid var(--line); margin:32px 0; }
+  .foot { color:var(--dim); font-size:13px; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Django + DRF — Applications & Labels</h1>
+<p class="lede">A small REST API: authenticated users create <b>Applications</b>, each with many <b>Labels</b>. Label names are globally unique, admins gate the <code>is_protected</code> flag, and labels can be created inline when you create an Application.</p>
+
+<div class="toc">
+  <b>The rules we're implementing</b>
+  <ol>
+    <li>Users can create an <b>Application</b>; an Application has many <b>Labels</b> (M2M).</li>
+    <li>A <b>Label</b> has a unique <code>name</code> and an <code>is_protected</code> boolean.</li>
+    <li>Only <b>admins</b> can set <code>is_protected = true</code>, or update a label that's already protected.</li>
+    <li>When creating an Application you can supply labels inline to create alongside it.</li>
+    <li>Label names are unique — if a supplied name already exists, <b>reuse the existing label</b> (don't error, don't overwrite it).</li>
+  </ol>
+</div>
+
+<h2 id="setup">1. Project setup</h2>
+<pre><code>python -m venv venv && source venv/bin/activate
+pip install django djangorestframework
+
+django-admin startproject config .   <span class="tok-c"># project in the current dir</span>
+python manage.py startapp labels      <span class="tok-c"># our app</span></code></pre>
+
+<p class="path">config/settings.py</p>
+<pre><code>INSTALLED_APPS = [
+    <span class="tok-c"># ...django defaults...</span>
+    "rest_framework",
+    "labels",
+]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}</code></pre>
+<div class="note">In DRF, an <b>admin</b> is just a user with <code>is_staff=True</code> (what you get from <code>createsuperuser</code>, or tick "staff status" in the Django admin). We use <code>request.user.is_staff</code> as the admin check throughout.</div>
+
+<h2 id="models">2. Models</h2>
+<p class="path">labels/models.py</p>
+<pre><code>from django.conf import settings
+from django.db import models
+
+
+class Label(models.Model):
+    name = models.CharField(max_length=100, unique=True)      <span class="tok-c"># globally unique</span>
+    is_protected = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
+class Application(models.Model):
+    name = models.CharField(max_length=200)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+    labels = models.ManyToManyField(Label, related_name="applications", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name</code></pre>
+
+<div class="ok"><b>Why M2M + unique name:</b> labels are shared, first-class rows (not owned by one app), so "add the <code>urgent</code> label to five apps" reuses <b>one</b> <code>Label</code> row. The unique constraint is what makes "reuse if it exists" meaningful.</div>
+
+<pre><code>python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser   <span class="tok-c"># your admin (is_staff=True)</span></code></pre>
+
+<h2 id="serializers">3. Serializers</h2>
+<p>Two jobs: (a) the <b>Label</b> serializer enforces "only admins can protect," and (b) the <b>Application</b> serializer accepts inline labels and does the get-or-create.</p>
+
+<p class="path">labels/serializers.py</p>
+<pre><code>from django.db import transaction
+from rest_framework import serializers
+
+from .models import Application, Label
+
+
+class LabelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Label
+        fields = ["id", "name", "is_protected"]
+
+    def validate_is_protected(self, value):
+        <span class="tok-c"># Rule 3a: only admins can flip is_protected on.</span>
+        request = self.context.get("request")
+        if value and not (request and request.user.is_staff):
+            raise serializers.ValidationError("Only admins can protect a label.")
+        return value
+
+
+class LabelInputSerializer(serializers.Serializer):
+    <span class="tok-c"># Shape of each label supplied inline on Application create.</span>
+    name = serializers.CharField(max_length=100)
+    is_protected = serializers.BooleanField(required=False, default=False)
+
+
+class ApplicationSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, read_only=True)                       <span class="tok-c"># output</span>
+    labels_input = LabelInputSerializer(many=True, write_only=True, required=False)  <span class="tok-c"># input</span>
+
+    class Meta:
+        model = Application
+        fields = ["id", "name", "owner", "labels", "labels_input", "created_at"]
+        read_only_fields = ["owner", "created_at"]
+
+    def create(self, validated_data):
+        labels_data = validated_data.pop("labels_input", [])
+        request = self.context["request"]
+        is_admin = request.user.is_staff
+
+        with transaction.atomic():
+            application = Application.objects.create(
+                owner=request.user, **validated_data
+            )
+
+            for item in labels_data:
+                name = item["name"]
+                wants_protected = item.get("is_protected", False)
+
+                <span class="tok-c"># Rule 3a: non-admins can't create a protected label.</span>
+                if wants_protected and not is_admin:
+                    raise serializers.ValidationError(
+                        {"labels_input": f"Only admins can create the protected label '{name}'."}
+                    )
+
+                <span class="tok-c"># Rule 5: unique names -> reuse if it exists, else create.</span>
+                <span class="tok-c"># is_protected in `defaults` only applies when a NEW row is created</span>
+                <span class="tok-c"># (and only admins reach here with it True), so existing labels</span>
+                <span class="tok-c"># are used as-is and never mutated.</span>
+                label, _created = Label.objects.get_or_create(
+                    name=name,
+                    defaults={"is_protected": bool(wants_protected)},
+                )
+                application.labels.add(label)
+
+        return application</code></pre>
+
+<div class="rule"><b>The key move</b> is <code>get_or_create(name=..., defaults={...})</code>. If the name exists it returns that row and <b>ignores</b> <code>defaults</code> — so you "just use the one that exists" for free, and you can never flip an existing label's protection through the Application endpoint (that's an admin-only Label update, below). Wrapping in <code>transaction.atomic()</code> means a rejected protected-label doesn't leave a half-created Application behind.</div>
+
+<h2 id="permissions">4. Permission: don't touch protected labels</h2>
+<p>Rule 3b — a label that's already protected can only be updated/deleted by an admin. That's an <b>object-level</b> permission on the Label endpoint.</p>
+<p class="path">labels/permissions.py</p>
+<pre><code>from rest_framework import permissions
+
+
+class ProtectedLabelPermission(permissions.BasePermission):
+    """Only admins may modify a label that is protected."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:   <span class="tok-c"># GET/HEAD/OPTIONS</span>
+            return True
+        if obj.is_protected and not request.user.is_staff:
+            return False
+        return True</code></pre>
+<div class="note">This handles <b>updating a protected label</b>. Trying to <b>set</b> <code>is_protected=true</code> in the first place is already blocked by <code>validate_is_protected</code> in the serializer. Together they cover both halves of Rule 3.</div>
+
+<h2 id="views">5. Views</h2>
+<p class="path">labels/views.py</p>
+<pre><code>from rest_framework import permissions, viewsets
+
+from .models import Application, Label
+from .permissions import ProtectedLabelPermission
+from .serializers import ApplicationSerializer, LabelSerializer
+
+
+class LabelViewSet(viewsets.ModelViewSet):
+    queryset = Label.objects.all()
+    serializer_class = LabelSerializer
+    permission_classes = [permissions.IsAuthenticated, ProtectedLabelPermission]
+
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    serializer_class = ApplicationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        <span class="tok-c"># Users only see their own applications.</span>
+        return (
+            Application.objects
+            .filter(owner=self.request.user)
+            .prefetch_related("labels")
+        )</code></pre>
+
+<h2 id="urls">6. URLs</h2>
+<p class="path">config/urls.py</p>
+<pre><code>from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from labels.views import ApplicationViewSet, LabelViewSet
+
+router = DefaultRouter()
+router.register("applications", ApplicationViewSet, basename="application")
+router.register("labels", LabelViewSet, basename="label")
+
+urlpatterns = [
+    path("api/", include(router.urls)),
+]</code></pre>
+<pre><code>python manage.py runserver</code></pre>
+
+<h2 id="try">7. Try it</h2>
+<p>Examples with <a href="https://httpie.io">HTTPie</a> (<code>:=</code> sends raw JSON). Curl works too — just send a JSON body with Basic auth.</p>
+
+<h3>Create an app with two brand-new labels</h3>
+<pre><code>http -a alice:pw POST :8000/api/applications/ \
+  name="Billing Service" \
+  labels_input:='[{"name": "backend"}, {"name": "urgent"}]'</code></pre>
+
+<h3>Create a second app reusing "backend"</h3>
+<pre><code>http -a alice:pw POST :8000/api/applications/ \
+  name="Reports Service" \
+  labels_input:='[{"name": "backend"}, {"name": "analytics"}]'
+<span class="tok-c"># "backend" is reused (same Label row); "analytics" is created new.</span></code></pre>
+
+<h3>Admin protects a label directly</h3>
+<pre><code>http -a admin:pw PATCH :8000/api/labels/1/ is_protected:=true   <span class="tok-c"># 200 OK</span></code></pre>
+
+<h3>Non-admin tries to protect → blocked</h3>
+<pre><code>http -a alice:pw PATCH :8000/api/labels/2/ is_protected:=true
+<span class="tok-c"># 400 — {"is_protected": ["Only admins can protect a label."]}</span>
+
+http -a alice:pw PATCH :8000/api/labels/1/ name="renamed"
+<span class="tok-c"># 403 — label 1 is protected; only admins may modify it.</span>
+
+http -a alice:pw POST :8000/api/applications/ \
+  name="Sneaky" labels_input:='[{"name": "vip", "is_protected": true}]'
+<span class="tok-c"># 400 — "Only admins can create the protected label 'vip'."</span></code></pre>
+
+<h2 id="notes">8. Edge cases &amp; choices</h2>
+<ul>
+  <li><b>Existing labels are never mutated here.</b> If a non-admin references an existing (even protected) label by name on Application create, it just gets attached — attaching isn't modifying. Changing a label's protection is a separate, admin-only <code>PATCH /api/labels/{id}/</code>.</li>
+  <li><b>Non-admin sends <code>is_protected:true</code> for a name that already exists:</b> the code above rejects it for clarity (they <i>asked</i> to protect). If you'd rather silently ignore it for names that already exist, look the label up first and only enforce the rule when you're about to <i>create</i> a new one.</li>
+  <li><b>Uniqueness race:</b> <code>get_or_create</code> can still raise <code>IntegrityError</code> if two requests create the same new name at the same instant. The DB unique constraint keeps you correct; wrap in <code>try/except IntegrityError</code> and re-fetch if you want it fully race-proof.</li>
+  <li><b>Duplicate names in one request</b> (<code>[{"name":"x"},{"name":"x"}]</code>) are harmless — the second <code>get_or_create</code> returns the row the first just made, and adding the same label to an M2M twice is a no-op.</li>
+  <li><b>Want protection immutable once set?</b> Add a <code>validate</code> on <code>LabelSerializer</code> that blocks turning <code>is_protected</code> back to <code>false</code> unless admin, mirroring the on-switch rule.</li>
+</ul>
+
+<hr>
+<p class="foot">Built by Otto. Rules → code map: R1–2 models · R3a <code>validate_is_protected</code> + serializer create guard · R3b <code>ProtectedLabelPermission</code> · R4–5 <code>ApplicationSerializer.create</code> get-or-create.</p>
+
+</div>
+</body>
+</html>
