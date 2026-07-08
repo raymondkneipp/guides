@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Searchable GitHub Events — Django · DRF · Postgres · Elasticsearch · Docker</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#38bdf8; --accent2:#a78bfa; --border:#334155; --ok:#34d399; --warn:#fbbf24;
+    --code:#0b1220;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 120px}
+  header.hero{padding:28px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 8px;line-height:1.2}
+  h1 .sub{display:block;font-size:15px;color:var(--muted);font-weight:400;margin-top:8px}
+  h2{font-size:22px;margin:44px 0 6px;padding-top:12px;border-top:1px dashed var(--border)}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 6px;color:var(--accent2)}
+  p{margin:10px 0}
+  a{color:var(--accent)}
+  code:not(pre code){background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.92em}
+  .lead{color:var(--muted)}
+  .stack{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .chip{background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:5px 12px;font-size:13px;color:var(--muted)}
+  .chip b{color:var(--text)}
+  .task{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;
+    padding:12px 16px;margin:16px 0}
+  .task b{color:var(--accent)}
+  .rep{background:var(--panel);border-left:3px solid var(--accent2);border-radius:8px;
+    padding:12px 16px;margin:16px 0}
+  .rep b{color:var(--accent2)}
+  .recall{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.25);
+    border-radius:8px;padding:12px 16px;margin:16px 0}
+  .recall b{color:var(--ok)}
+  .recall ol{margin:6px 0 0;padding-left:20px}
+  .recall li{margin:4px 0}
+  .note{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);
+    border-radius:8px;padding:10px 14px;margin:14px 0;font-size:14px}
+  .note.why{border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08)}
+  .note.gotcha{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+  .note .tag{font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:11px;
+    display:block;margin-bottom:2px;color:var(--accent2)}
+  .note.gotcha .tag{color:var(--warn)}
+  .deeper{border:1px solid var(--border);border-radius:8px;padding:2px 14px 6px;margin:16px 0;
+    background:rgba(148,163,184,.05)}
+  .deeper .tag{font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:11px;
+    color:var(--muted);display:block;margin:10px 0 2px}
+  .deeper ul{margin:4px 0;padding-left:20px}
+  .deeper li{margin:4px 0;font-size:14px}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    margin:12px 0;overflow:hidden}
+  details[open]{border-color:var(--accent)}
+  summary{cursor:pointer;padding:11px 16px;font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:10px;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▶";color:var(--accent);font-size:11px;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{background:var(--panel2)}
+  summary .kind{margin-left:auto;font-size:11px;color:var(--muted);font-weight:500;
+    text-transform:uppercase;letter-spacing:.04em}
+  details .body{padding:0 16px 14px}
+  pre{background:var(--code)!important;border:1px solid var(--border);border-radius:8px;
+    padding:14px;overflow:auto;margin:10px 0;font-size:13.5px;line-height:1.5}
+  pre code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{position:relative}
+  .copy-btn{position:absolute;top:8px;right:8px;background:var(--panel2);color:var(--muted);
+    border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;
+    opacity:0;transition:opacity .12s;font-family:system-ui,sans-serif}
+  pre:hover .copy-btn{opacity:1}
+  .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+  .copy-btn.done{color:var(--ok);border-color:var(--ok);opacity:1}
+  .diff{color:var(--ok)}
+  .path{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--accent2);
+    margin:8px 0 -4px;display:block}
+  .toolbar{position:sticky;top:0;z-index:5;background:rgba(15,23,42,.92);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--border);
+    margin:0 -20px 0;padding:10px 20px;display:flex;gap:10px;align-items:center}
+  .toolbar button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .toolbar button:hover{border-color:var(--accent)}
+  .toolbar .grow{flex:1}
+  .toc{columns:2;gap:24px;font-size:14px;margin:12px 0 0;padding:0;list-style:none}
+  .toc li{margin:4px 0;break-inside:avoid}
+  .toc a{color:var(--muted);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  ul.clean{margin:10px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  .arch{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:16px;overflow:auto;font-family:ui-monospace,monospace;font-size:12.5px;
+    color:var(--muted);white-space:pre;line-height:1.5}
+  .series{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;font-size:13px}
+  .series .p{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;color:var(--muted)}
+  .series .p.here{border-color:var(--accent);color:var(--text)}
+  .series .p b{color:var(--accent)}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13px}
+  kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;
+    border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Searchable GitHub Events
+    <span class="sub"><b>Project 1 of 4</b> · Ingest real GitHub activity and make it searchable with
+    <b>Django</b> · <b>DRF</b> · <b>PostgreSQL</b> · <b>Elasticsearch</b> · <b>Docker</b></span>
+  </h1>
+  <div class="stack">
+    <span class="chip"><b>Django + DRF</b> — the API</span>
+    <span class="chip"><b>Postgres</b> — source of truth</span>
+    <span class="chip"><b>Elasticsearch</b> — full-text search</span>
+    <span class="chip"><b>Docker Compose</b> — the local stack</span>
+  </div>
+  <p class="lead">Every module runs the same loop: <b>Teach</b> the concept, <b>Build along</b> with the
+  code in the open, then a <b>Your Rep</b> task you solve solo (solution hidden in an accordion — peek
+  only if stuck), and a <b>Recall</b> check to cement it. We build files up in <b>small passes</b>, not
+  finished dumps — you see each piece earn its place.</p>
+  <div class="series">
+    <span class="p here"><b>1 ▸</b> Django · ES · Docker</span>
+    <span class="p">2 ▸ Kafka · Kubernetes</span>
+    <span class="p">3 ▸ Argo Workflows · Events</span>
+    <span class="p">4 ▸ Argo CD · Capstone</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button id="expandAll">Expand all</button>
+  <button id="collapseAll">Collapse all</button>
+  <span class="grow"></span>
+  <span style="font-size:12px;color:var(--muted)">Click ▶ to reveal a solution</span>
+</div>
+
+<h3 style="margin-top:22px">Contents</h3>
+<ol class="toc">
+  <li><a href="#arch">0 · What we're building &amp; why</a></li>
+  <li><a href="#prereq">1 · Prerequisites</a></li>
+  <li><a href="#scaffold">2 · Scaffold Django + DRF</a></li>
+  <li><a href="#model">3 · The GithubEvent model</a></li>
+  <li><a href="#db">4 · Real Postgres via Docker Compose</a></li>
+  <li><a href="#api">5 · A read-only API with DRF</a></li>
+  <li><a href="#ingest">6 · Ingest real GitHub events</a></li>
+  <li><a href="#es-run">7 · Run Elasticsearch</a></li>
+  <li><a href="#es-index">8 · Index events into Elasticsearch</a></li>
+  <li><a href="#search">9 · Build the search endpoint</a></li>
+  <li><a href="#compose">10 · The whole stack in one file</a></li>
+  <li><a href="#recap">11 · Recap, extensions &amp; what's next</a></li>
+</ol>
+
+<!-- ============================================================= -->
+<h2 id="arch"><span class="num">0</span> · What we're building &amp; why</h2>
+<p>GitHub publishes a <b>live public firehose</b> of everything happening across the site — every push,
+star, fork, issue, and pull request — at <code>https://api.github.com/events</code>. It's real, messy,
+high-volume data you didn't have to invent. Perfect fuel for a search platform.</p>
+<p>In this first project you'll poll that firehose, store each event durably in Postgres, mirror it into
+Elasticsearch, and expose a search API. No fake data, ever — that's a hard rule for the whole series.</p>
+
+<div class="arch">
+   GitHub Events API                ┌──────────────────────────────┐
+   api.github.com/events ──poll──▶  │      Django (management cmd)  │
+                                    │   ingest_events: fetch + save │
+                                    └───────────┬──────────────────┘
+                                                │ write (source of truth)
+                                                ▼
+                                        ┌───────────────┐
+                                        │  PostgreSQL   │
+                                        └───────┬───────┘
+                                                │ mirror for search
+                                                ▼
+   GET /api/search?q=…    ┌──────────────┐   query   ┌───────────────┐
+   ──────────────────────▶│ Django + DRF │──────────▶│ Elasticsearch │
+                          └──────────────┘           └───────────────┘
+
+           Everything runs together via one docker-compose.yml.
+</div>
+
+<div class="note why"><span class="tag">Why two stores</span>
+Postgres is your <b>system of record</b> — durable, relational, the truth. Elasticsearch is a
+<b>search index</b> — it trades some durability guarantees for blazing full-text queries, ranking, and
+aggregations that would be painful in SQL. Mirroring Postgres → ES is a pattern you'll meet everywhere.
+In Project 2 the mirror stops being a direct call and becomes a <b>Kafka</b> pipeline — this project is
+where you feel <i>why</i> you'd want that.</div>
+
+<ul class="clean">
+  <li><b>Django + DRF</b> — models, migrations, serializers, viewsets, routing. The API core.</li>
+  <li><b>Postgres</b> — the durable table of events, driven entirely by environment variables.</li>
+  <li><b>Elasticsearch</b> — an inverted index, a mapping, bulk indexing, and query DSL.</li>
+  <li><b>Docker Compose</b> — three services (web, db, search) wired together with one command.</li>
+</ul>
+
+<div class="deeper"><span class="tag">Go deeper — canonical</span>
+<ul class="clean">
+  <li><a href="https://docs.github.com/en/rest/activity/events">GitHub REST — Events</a> (the exact firehose you're ingesting)</li>
+  <li><a href="https://www.django-rest-framework.org/">Django REST Framework docs</a></li>
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html">Elasticsearch — getting started</a></li>
+</ul></div>
+
+<!-- ============================================================= -->
+<h2 id="prereq"><span class="num">1</span> · Prerequisites</h2>
+<p>Install these once. Nothing to "solve" here — just a working toolbelt.</p>
+<ul class="clean">
+  <li><b>Python 3.12+</b> and <a href="https://docs.astral.sh/uv/"><code>uv</code></a> — fast package &amp; venv manager (replaces pip/venv)</li>
+  <li><b>Docker</b> (or Podman) + <b>Docker Compose</b> — runs Postgres, Elasticsearch, and the app</li>
+  <li><b>curl</b> or <a href="https://httpie.io/"><code>httpie</code></a> — to hit your API</li>
+  <li>A <b>GitHub personal access token</b> (classic, no scopes needed) — lifts your API rate limit from
+    60/hr to 5,000/hr. <a href="https://github.com/settings/tokens">Create one here</a>.</li>
+</ul>
+<details><summary>Install commands (macOS / Homebrew) <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># uv = fast Python package &amp; venv manager from Astral
+brew install python uv httpie
+# No Homebrew? curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Docker Desktop (includes Compose). Or: brew install --cask docker
+brew install --cask docker
+open -a Docker            # start the daemon
+
+# Verify
+uv --version
+docker --version
+docker compose version</code></pre>
+<div class="note why"><span class="tag">Why a token now</span>
+The public events endpoint is rate-limited hard for anonymous callers (60 requests/hour). You'll poll
+it repeatedly while testing, so an authenticated token (5,000/hour) saves you from constant
+<code>403 rate limit exceeded</code> walls. It needs <b>no scopes</b> — public events are public.</div>
+</div></details>
+
+<!-- ============================================================= -->
+<h2 id="scaffold"><span class="num">2</span> · Scaffold Django + DRF</h2>
+<p><b>Teach.</b> A Django <i>project</i> is the outer container (settings, root URL config); an
+<i>app</i> is a feature module inside it. We'll name the project <code>config</code> so its settings live
+at an obvious import path, and the app <code>events</code>. DRF is just a Django app you install and list
+in <code>INSTALLED_APPS</code>.</p>
+<div class="task"><b>Build along:</b> create the venv, install Django + DRF + the clients we'll need,
+generate the <code>config</code> project and <code>events</code> app, and register both DRF and the app.</div>
+<details><summary>Solution — project setup <span class="kind">commands + code</span></summary>
+<div class="body">
+<pre><code class="language-bash">mkdir gh-events &amp;&amp; cd gh-events
+# uv init --bare makes a pyproject.toml with no sample code; it manages .venv + a lockfile.
+uv init --bare --python 3.12
+
+# Everything we need across the whole project, added up front:
+#   requests           -> call the GitHub API
+#   elasticsearch      -> the ES client
+#   psycopg2-binary    -> the Postgres driver
+#   gunicorn           -> the production WSGI server (used in the container)
+uv add "Django>=5.0" djangorestframework requests elasticsearch psycopg2-binary gunicorn
+
+uv run django-admin startproject config .
+uv run python manage.py startapp events</code></pre>
+<span class="path">config/settings.py — add to INSTALLED_APPS</span>
+<pre><code class="language-python">INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",      # &lt;-- DRF
+    "events",              # &lt;-- our app
+]</code></pre>
+<div class="note why"><span class="tag">Why name it "config"</span>
+Naming the project package <code>config</code> instead of repeating the repo name means your settings,
+urls, and wsgi entrypoint live at predictable paths (<code>config.settings</code>, <code>config.wsgi</code>).
+It's a widely used convention that keeps import lines readable.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>What's the difference between a Django <i>project</i> and an <i>app</i>?</li>
+  <li>DRF didn't need a <code>startapp</code>-style command — why does adding it to <code>INSTALLED_APPS</code> suffice?</li>
+</ol></div>
+
+<!-- ============================================================= -->
+<h2 id="model"><span class="num">3</span> · The GithubEvent model</h2>
+<p><b>Teach.</b> A <i>model</i> is a Python class that maps to a database table; each attribute is a
+column. Django's <i>migrations</i> turn changes to that class into versioned SQL. We'll build the model
+in two passes so you see each decision — first the raw shape of a GitHub event, then the indexes that
+make it fast to query.</p>
+
+<h3>Pass 1 — the fields</h3>
+<p>Look at one real event first so the columns aren't abstract:</p>
+<pre><code class="language-json">{
+  "id": "41234567890",
+  "type": "PushEvent",
+  "actor": { "login": "torvalds" },
+  "repo":  { "name": "torvalds/linux" },
+  "payload": { "commits": [ { "message": "Merge tag ..." } ] },
+  "created_at": "2026-07-08T14:03:11Z"
+}</code></pre>
+<p>Map that straight onto a model. Start plain — no indexes yet:</p>
+<span class="path">events/models.py — first pass</span>
+<pre><code class="language-python">from django.db import models
+
+
+class GithubEvent(models.Model):
+    event_id = models.CharField(max_length=32, unique=True)   # GitHub's event id
+    type = models.CharField(max_length=64)                    # "PushEvent", "WatchEvent", ...
+    actor_login = models.CharField(max_length=255)            # who did it
+    repo_name = models.CharField(max_length=255)              # "owner/repo"
+    created_at = models.DateTimeField()                       # when GitHub says it happened
+    payload = models.JSONField(default=dict)                  # the full type-specific blob
+    ingested_at = models.DateTimeField(auto_now_add=True)     # when WE stored it</code></pre>
+
+<div class="note why"><span class="tag">Why <code>event_id</code> is unique</span>
+The firehose overlaps — poll it twice and you'll see the same events again. A <code>unique=True</code>
+constraint on GitHub's own id makes the database itself reject duplicates, so ingestion can be naive and
+still be correct. That's your dedup safety net, enforced where it can't be bypassed.</div>
+<div class="note why"><span class="tag">Why a <code>JSONField</code> for payload</span>
+Every event <i>type</i> has a different payload shape (a push has commits, a star has none). Rather than
+model 15 event types, we keep the common columns flat and stash the variable part in one JSON column.
+Postgres stores it as <code>jsonb</code> and can even query inside it later.</div>
+
+<h3>Pass 2 — make it queryable</h3>
+<p><b>Teach.</b> You'll almost always filter events by <code>type</code>, by <code>repo_name</code>, and
+sort newest-first by <code>created_at</code>. Unindexed, each of those is a full table scan. Add
+<code>db_index=True</code> to the hot columns and a default ordering via an inner <code>Meta</code> class,
+plus a <code>__str__</code> so objects are readable in the shell and admin.</p>
+<span class="path">events/models.py — add the lines marked <code># +</code></span>
+<pre><code class="language-python">class GithubEvent(models.Model):
+    event_id = models.CharField(max_length=32, unique=True)
+    type = models.CharField(max_length=64, db_index=True)          # + index
+    actor_login = models.CharField(max_length=255, db_index=True)  # + index
+    repo_name = models.CharField(max_length=255, db_index=True)    # + index
+    created_at = models.DateTimeField(db_index=True)               # + index
+    payload = models.JSONField(default=dict)
+    ingested_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:                            # + default ordering
+        ordering = ["-created_at"]         # newest first, everywhere
+
+    def __str__(self):                     # + readable repr
+        return f"{self.type} by {self.actor_login} on {self.repo_name}"</code></pre>
+<p>We can't migrate yet — there's no database running. That's the next step. Leave the model here.</p>
+
+<div class="rep"><b>Your Rep:</b> GitHub events have a <code>public</code> boolean and an optional
+<code>org</code>. Add an <code>is_public</code> <code>BooleanField</code> (default <code>True</code>) and an
+<code>org_login</code> <code>CharField</code> that's allowed to be empty. Which one needs
+<code>null/blank</code> handling, and why?</div>
+<details><summary>Solution — the two extra fields <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">events/models.py — inside GithubEvent</span>
+<pre><code class="language-python">    is_public = models.BooleanField(default=True)
+    org_login = models.CharField(max_length=255, blank=True, default="")</code></pre>
+<div class="note why"><span class="tag">Why <code>blank</code>+default, not <code>null</code></span>
+For text, the Django convention is to store "no value" as the empty string (<code>default=""</code>,
+<code>blank=True</code>) rather than <code>NULL</code>, so you never have to check for two kinds of
+"empty." <code>blank=True</code> is the <i>validation</i> rule (forms/serializers allow it);
+<code>null=True</code> is the <i>database</i> rule. <code>is_public</code> is a real boolean with a
+sensible default, so it needs neither.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>What does a migration actually <i>do</i> — and why isn't editing the model enough on its own?</li>
+  <li>Why put <code>ordering</code> on <code>Meta</code> instead of sorting in every view?</li>
+  <li>When would <code>db_index=True</code> hurt rather than help?</li>
+</ol></div>
+
+<!-- ============================================================= -->
+<h2 id="db"><span class="num">4</span> · Real Postgres via Docker Compose</h2>
+<p><b>Teach.</b> Django defaults to SQLite. We want the real thing — the same Postgres that'll run in the
+cluster later — so the only thing that changes between laptop, CI, and Kubernetes is <i>environment
+variables</i>, never code. That's the <a href="https://12factor.net/config">12-factor</a> config idea.</p>
+
+<h3>Point Django at env-driven Postgres</h3>
+<div class="task"><b>Build along:</b> replace the default <code>DATABASES</code> block so every connection
+detail is read from the environment, with laptop-friendly defaults.</div>
+<span class="path">config/settings.py — replace the DATABASES block</span>
+<pre><code class="language-python">import os
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "ghevents"),
+        "USER": os.environ.get("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+    }
+}
+
+# Read from env so the same image is safe in-cluster later. Tighten for real deploys.
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")</code></pre>
+
+<h3>Start a Postgres — Compose, one service at a time</h3>
+<p><b>Teach.</b> We'll grow one <code>docker-compose.yml</code> across this whole project. It starts as
+just a database. Later we add Elasticsearch, then the web app. Begin small:</p>
+<span class="path">docker-compose.yml — first service</span>
+<pre><code class="language-yaml">services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ghevents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"           # expose to the laptop so manage.py can reach it
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # survive restarts
+
+volumes:
+  pgdata:</code></pre>
+<details><summary>Solution — bring it up &amp; migrate <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Start Postgres in the background
+docker compose up -d db
+
+# Create the tables from your models
+uv run python manage.py makemigrations
+uv run python manage.py migrate
+
+# Sanity check: open the Django shell and confirm the table is empty
+uv run python manage.py shell -c "from events.models import GithubEvent; print(GithubEvent.objects.count())"
+# -> 0</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — order of operations</span>
+<code>makemigrations</code> writes migration files by reading your models; <code>migrate</code> applies
+them to the running database. If you see <code>connection refused</code>, Postgres isn't up yet — give
+<code>docker compose up -d db</code> a few seconds, or check <code>docker compose logs db</code>.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Why read DB settings from the environment instead of hard-coding them?</li>
+  <li>What does the named <code>pgdata</code> volume protect you from?</li>
+  <li>What's the difference between <code>makemigrations</code> and <code>migrate</code>?</li>
+</ol></div>
+
+<!-- ============================================================= -->
+<h2 id="api"><span class="num">5</span> · A read-only API with DRF</h2>
+<p><b>Teach.</b> DRF turns a model into a JSON API with three pieces: a <b>serializer</b> (model ⇄ JSON),
+a <b>viewset</b> (the endpoint behavior), and a <b>router</b> (URL wiring). Since events come <i>from</i>
+GitHub, our API is read-only — a <code>ReadOnlyModelViewSet</code> gives you list + detail and nothing
+that writes.</p>
+
+<h3>Step 1 — the serializer</h3>
+<div class="task"><b>Build along:</b> a serializer that exposes the event fields as JSON.</div>
+<span class="path">events/serializers.py</span>
+<pre><code class="language-python">from rest_framework import serializers
+from .models import GithubEvent
+
+
+class GithubEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GithubEvent
+        fields = ["event_id", "type", "actor_login", "repo_name",
+                  "created_at", "payload", "ingested_at"]</code></pre>
+
+<h3>Step 2 — the viewset</h3>
+<p>Build the endpoint on top of the serializer. Start with the plainest possible list, then layer on
+query-param filtering so you see where it plugs in.</p>
+<span class="path">events/views.py — first pass (list + detail)</span>
+<pre><code class="language-python">from rest_framework import viewsets
+from .models import GithubEvent
+from .serializers import GithubEventSerializer
+
+
+class GithubEventViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = GithubEvent.objects.all()          # Meta.ordering -> newest first
+    serializer_class = GithubEventSerializer</code></pre>
+<p>Now let callers narrow by <code>?type=</code> and <code>?actor=</code> by overriding
+<code>get_queryset</code>. This is the one change — the new method marked <code># +</code>:</p>
+<span class="path">events/views.py — add filtering</span>
+<pre><code class="language-python">class GithubEventViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = GithubEvent.objects.all()
+    serializer_class = GithubEventSerializer
+
+    def get_queryset(self):                    # + query-param filtering
+        qs = super().get_queryset()
+        event_type = self.request.query_params.get("type")
+        actor = self.request.query_params.get("actor")
+        if event_type:
+            qs = qs.filter(type=event_type)
+        if actor:
+            qs = qs.filter(actor_login=actor)
+        return qs</code></pre>
+
+<h3>Step 3 — wire the router + pagination</h3>
+<span class="path">config/urls.py</span>
+<pre><code class="language-python">from django.contrib import admin
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from events.views import GithubEventViewSet
+
+router = DefaultRouter()
+router.register(r"events", GithubEventViewSet, basename="event")
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),      # -> /api/events/ and /api/events/&lt;pk&gt;/
+]</code></pre>
+<span class="path">config/settings.py — add near the bottom</span>
+<pre><code class="language-python">REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 25,
+}</code></pre>
+<div class="note why"><span class="tag">Why a router</span>
+<code>DefaultRouter</code> generates the URL patterns for a viewset for you — list, detail, and a
+browsable API root — from one <code>register()</code> line. Pagination is global here so no single
+endpoint can accidentally return 10,000 rows.</div>
+
+<div class="rep"><b>Your Rep:</b> add a third filter, <code>?repo=</code>, that matches
+<code>repo_name</code>. Then decide: should it be an exact match or a "contains" match? Implement the one
+you'd want as a user of a search-y API.</div>
+<details><summary>Solution — the repo filter <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">events/views.py — inside get_queryset, before <code>return qs</code></span>
+<pre><code class="language-python">        repo = self.request.query_params.get("repo")
+        if repo:
+            qs = qs.filter(repo_name__icontains=repo)   # substring, case-insensitive</code></pre>
+<div class="note why"><span class="tag">Why <code>icontains</code> here</span>
+A user searching <code>repo=linux</code> expects <code>torvalds/linux</code> to match — exact match on
+<code>owner/repo</code> would be almost useless. But note: <code>icontains</code> can't use the plain
+index and gets slow on big tables. That limitation is <i>exactly</i> the itch Elasticsearch scratches,
+which is where we go next. Two steps from now you'll retire this SQL <code>LIKE</code> for a real search
+index.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Name the three DRF pieces and what each is responsible for.</li>
+  <li>Why <code>ReadOnlyModelViewSet</code> instead of <code>ModelViewSet</code> for this data?</li>
+  <li>Where did "newest first" come from — you never wrote it in the view.</li>
+</ol></div>
+
+<div class="deeper"><span class="tag">Go deeper — canonical</span>
+<ul class="clean">
+  <li><a href="https://www.django-rest-framework.org/api-guide/viewsets/">DRF — ViewSets</a> and <a href="https://www.django-rest-framework.org/api-guide/routers/">Routers</a></li>
+  <li><a href="https://docs.djangoproject.com/en/stable/topics/db/queries/">Django — making queries</a> (filter, lookups like <code>icontains</code>)</li>
+</ul></div>
+
+<!-- ============================================================= -->
+<h2 id="ingest"><span class="num">6</span> · Ingest real GitHub events</h2>
+<p><b>Teach.</b> Time for real data. A Django <i>management command</i> is a script with full ORM access,
+run via <code>manage.py</code>. Ours will fetch a page of events from GitHub, normalize each into our
+model shape, and <code>get_or_create</code> so re-runs don't duplicate. We'll build the command in two
+passes: first the fetch, then the save.</p>
+
+<h3>Pass 1 — fetch a page</h3>
+<p>The package layout for a command matters — Django discovers it by path:</p>
+<pre><code class="language-bash"># Create the package files Django looks for:
+mkdir -p events/management/commands
+touch events/management/__init__.py events/management/commands/__init__.py</code></pre>
+<span class="path">events/management/commands/ingest_events.py — fetch only</span>
+<pre><code class="language-python">import os
+import requests
+from django.core.management.base import BaseCommand
+
+
+class Command(BaseCommand):
+    help = "Fetch recent public events from the GitHub API."
+
+    def handle(self, *args, **options):
+        headers = {"Accept": "application/vnd.github+json"}
+        token = os.environ.get("GITHUB_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        resp = requests.get("https://api.github.com/events",
+                            headers=headers, params={"per_page": 100}, timeout=10)
+        resp.raise_for_status()
+        events = resp.json()
+        self.stdout.write(f"Fetched {len(events)} events")</code></pre>
+
+<h3>Pass 2 — normalize &amp; save</h3>
+<p><b>Teach.</b> Each raw event is a nested dict. Pull out the flat columns, keep the rest in
+<code>payload</code>, and let the unique constraint handle dedup. Add the save loop:</p>
+<span class="path">events/management/commands/ingest_events.py — add inside handle()</span>
+<pre><code class="language-python">from django.utils.dateparse import parse_datetime
+from events.models import GithubEvent
+
+# ...after `events = resp.json()`, add the save loop:
+        created = 0
+        for e in events:
+            _, was_created = GithubEvent.objects.get_or_create(
+                event_id=e["id"],
+                defaults={
+                    "type": e["type"],
+                    "actor_login": e["actor"]["login"],
+                    "repo_name": e["repo"]["name"],
+                    "created_at": parse_datetime(e["created_at"]),
+                    "payload": e.get("payload", {}),
+                    "is_public": e.get("public", True),
+                    "org_login": e.get("org", {}).get("login", "") if e.get("org") else "",
+                },
+            )
+            created += was_created
+        self.stdout.write(self.style.SUCCESS(f"Saved {created} new events "
+                                             f"({len(events) - created} already seen)"))</code></pre>
+<details><summary>Solution — run it &amp; see real data <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Use your token so you don't hit the 60/hr anonymous wall
+export GITHUB_TOKEN=ghp_your_token_here
+
+uv run python manage.py ingest_events
+# -> Fetched 100 events
+# -> Saved 100 new events (0 already seen)
+
+# Run it again a few seconds later — dedup in action:
+uv run python manage.py ingest_events
+# -> Saved ~30 new events (70 already seen)
+
+# See them through your API
+uv run python manage.py runserver &amp;
+http :8000/api/events/                 # or: curl -s localhost:8000/api/events/ | jq
+http :8000/api/events/ type==PushEvent</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — <code>get_or_create</code> returns a tuple</span>
+It returns <code>(object, created_bool)</code>. We ignore the object (<code>_</code>) and sum the
+booleans to count genuinely new rows. If you forget the tuple and write
+<code>obj = get_or_create(...)</code>, later code that treats <code>obj</code> as a model will break.</div>
+</div></details>
+
+<div class="rep"><b>Your Rep:</b> the firehose only returns the last ~300 events, and it moves fast. Make
+ingestion <i>keep-alive</i>: add a <code>--loop</code> flag that re-fetches every N seconds until you
+<kbd>Ctrl-C</kbd>. (Hint: <code>parser.add_argument</code> in an <code>add_arguments</code> method, then a
+<code>while True</code> with <code>time.sleep</code>.)</div>
+<details><summary>Solution — a polling loop <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">events/management/commands/ingest_events.py — refactor</span>
+<pre><code class="language-python">import time
+
+class Command(BaseCommand):
+    help = "Fetch recent public events from the GitHub API."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--loop", type=int, default=0,
+                            help="Poll every N seconds (0 = run once).")
+
+    def handle(self, *args, **options):
+        interval = options["loop"]
+        while True:
+            self._fetch_once()
+            if interval &lt;= 0:
+                break
+            time.sleep(interval)
+
+    def _fetch_once(self):
+        ...   # the fetch + save code from above moves here</code></pre>
+<div class="note why"><span class="tag">Why poll on an interval</span>
+GitHub's <code>/events</code> is a <i>sliding window</i> of recent activity, not a queryable archive.
+Poll every ~15s and you accumulate a real, growing dataset. This manual loop is deliberately crude —
+in Project 2 you'll hand this job to a proper Kafka producer/consumer and never poll from a web request
+again. Feeling the crudeness now is the point.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Why a management command instead of, say, a cron job hitting an API endpoint?</li>
+  <li>Which layer actually prevents duplicate events, and why is that the safe place for it?</li>
+  <li>What does the <code>Authorization: Bearer</code> header buy you here?</li>
+</ol></div>
+
+<div class="deeper"><span class="tag">Go deeper — canonical</span>
+<ul class="clean">
+  <li><a href="https://docs.djangoproject.com/en/stable/howto/custom-management-commands/">Django — writing custom management commands</a></li>
+  <li><a href="https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api">GitHub — REST rate limits</a> (why the token matters)</li>
+</ul></div>
+
+<!-- ============================================================= -->
+<h2 id="es-run"><span class="num">7</span> · Run Elasticsearch</h2>
+<p><b>Teach.</b> Postgres finds rows by exact/indexed match. Elasticsearch builds an <b>inverted index</b>:
+it tokenizes text and maps each term → the documents containing it, so "find every event mentioning
+<i>kubernetes</i>, ranked by relevance" is instant. That's a different data structure than a B-tree, and
+it's why search engines exist alongside databases.</p>
+<div class="task"><b>Build along:</b> add Elasticsearch as a second Compose service. Single-node, security
+off — this is local dev, not production.</div>
+<span class="path">docker-compose.yml — add the search service</span>
+<pre><code class="language-yaml">  search:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      discovery.type: single-node          # don't try to form a cluster
+      xpack.security.enabled: "false"      # no TLS/auth for local dev
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"    # cap the heap so it fits your laptop
+    ports:
+      - "9200:9200"</code></pre>
+<details><summary>Solution — start it &amp; confirm it's alive <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">docker compose up -d search
+
+# Give it ~20s to boot, then check cluster health
+curl -s localhost:9200/_cluster/health | jq
+# -> {"status":"green"|"yellow", ...}  either is fine for one node</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — ES is memory-hungry</span>
+Elasticsearch runs a JVM; without the <code>ES_JAVA_OPTS</code> heap cap it can grab gigabytes and get
+OOM-killed on a laptop. If <code>search</code> keeps restarting, check <code>docker compose logs
+search</code> — a <code>max virtual memory areas vm.max_map_count [65530] is too low</code> error means
+you need <code>sysctl -w vm.max_map_count=262144</code> (Linux) or more memory for Docker Desktop.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>In one sentence: how does an inverted index differ from a B-tree database index?</li>
+  <li>Why is a single-node, security-off ES fine here but a terrible idea in production?</li>
+</ol></div>
+
+<!-- ============================================================= -->
+<h2 id="es-index"><span class="num">8</span> · Index events into Elasticsearch</h2>
+<p><b>Teach.</b> A <b>mapping</b> is ES's schema: it tells ES which fields are full-text (analyzed into
+terms) vs exact <code>keyword</code>s (filtered/aggregated as-is). We'll make a small ES helper module,
+create the index with an explicit mapping, then bulk-load everything already in Postgres.</p>
+
+<h3>Step 1 — a shared client + mapping</h3>
+<span class="path">events/search.py — the ES client and index definition</span>
+<pre><code class="language-python">import os
+from elasticsearch import Elasticsearch
+
+es = Elasticsearch(os.environ.get("ES_URL", "http://localhost:9200"))
+
+INDEX = "github-events"
+
+MAPPING = {
+    "mappings": {
+        "properties": {
+            "type":        {"type": "keyword"},   # exact: filter/aggregate
+            "actor_login": {"type": "keyword"},
+            "repo_name":   {"type": "text",        # analyzed for search...
+                            "fields": {"raw": {"type": "keyword"}}},  # ...+ exact subfield
+            "message":     {"type": "text"},       # commit/issue text -> full-text
+            "created_at":  {"type": "date"},
+        }
+    }
+}
+
+
+def ensure_index():
+    if not es.indices.exists(index=INDEX):
+        es.indices.create(index=INDEX, body=MAPPING)</code></pre>
+<div class="note why"><span class="tag">Why <code>text</code> + a <code>keyword</code> subfield</span>
+<code>repo_name</code> needs both jobs: full-text search (so "linux" matches "torvalds/linux") <b>and</b>
+exact grouping (top repos by count). ES's <code>fields</code> lets one source field be indexed two ways —
+<code>repo_name</code> for search, <code>repo_name.raw</code> for exact aggregations. <code>keyword</code>
+fields are <i>not</i> analyzed; <code>text</code> fields are broken into terms.</div>
+
+<h3>Step 2 — turn a model row into an ES document</h3>
+<p>The <code>message</code> field doesn't exist on the model — we derive it from the payload so there's
+something meaty to full-text search. Build the transform, then a bulk loader on top of it:</p>
+<span class="path">events/search.py — add the doc builder</span>
+<pre><code class="language-python">def _extract_message(payload: dict) -> str:
+    # Different event types hide their human text in different places.
+    commits = payload.get("commits") or []
+    if commits:
+        return " ".join(c.get("message", "") for c in commits)
+    if "issue" in payload:
+        return payload["issue"].get("title", "")
+    if "pull_request" in payload:
+        return payload["pull_request"].get("title", "")
+    return payload.get("action", "")   # e.g. "started" for a star
+
+
+def to_document(event) -> dict:
+    return {
+        "type": event.type,
+        "actor_login": event.actor_login,
+        "repo_name": event.repo_name,
+        "message": _extract_message(event.payload),
+        "created_at": event.created_at.isoformat(),
+    }</code></pre>
+<span class="path">events/search.py — add the bulk reindex</span>
+<pre><code class="language-python">from elasticsearch.helpers import bulk
+
+def reindex_all(queryset) -> int:
+    ensure_index()
+    actions = (
+        {"_index": INDEX, "_id": e.event_id, "_source": to_document(e)}
+        for e in queryset.iterator()
+    )
+    count, _ = bulk(es, actions)
+    es.indices.refresh(index=INDEX)   # make docs searchable immediately
+    return count</code></pre>
+
+<h3>Step 3 — a command to run it</h3>
+<div class="task"><b>Build along:</b> wrap <code>reindex_all</code> in a management command so mirroring
+Postgres → ES is one line.</div>
+<span class="path">events/management/commands/reindex.py</span>
+<pre><code class="language-python">from django.core.management.base import BaseCommand
+from events.models import GithubEvent
+from events.search import reindex_all
+
+
+class Command(BaseCommand):
+    help = "Mirror all GithubEvent rows into Elasticsearch."
+
+    def handle(self, *args, **options):
+        n = reindex_all(GithubEvent.objects.all())
+        self.stdout.write(self.style.SUCCESS(f"Indexed {n} events"))</code></pre>
+<details><summary>Solution — index everything &amp; verify <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">uv run python manage.py reindex
+# -> Indexed 130 events
+
+# Confirm the docs landed
+curl -s "localhost:9200/github-events/_count" | jq
+# -> {"count":130,...}
+
+# Peek at one document
+curl -s "localhost:9200/github-events/_search?size=1" | jq '.hits.hits[0]._source'</code></pre>
+<div class="note why"><span class="tag">Why <code>_id = event_id</code></span>
+Using GitHub's event id as the ES document <code>_id</code> makes indexing <b>idempotent</b> — re-index
+the same event and it overwrites rather than duplicates, exactly like the Postgres unique constraint.
+Same dedup idea, enforced in both stores.</div>
+</div></details>
+
+<div class="rep"><b>Your Rep:</b> re-indexing <i>everything</i> every time won't scale. Add an
+<code>index_one(event)</code> function in <code>search.py</code> that upserts a single event, and call it
+at the end of your ingest loop so new events are searchable the moment they're saved — no full reindex.</div>
+<details><summary>Solution — incremental indexing <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">events/search.py</span>
+<pre><code class="language-python">def index_one(event) -> None:
+    ensure_index()
+    es.index(index=INDEX, id=event.event_id, document=to_document(event))</code></pre>
+<span class="path">events/management/commands/ingest_events.py — after a successful create</span>
+<pre><code class="language-python">from events.search import index_one
+# ...inside the loop, when was_created is True:
+            if was_created:
+                index_one(obj)   # obj is the first item of the get_or_create tuple</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — the coupling you just created</span>
+Now every ingest does a synchronous ES write inline. If ES is slow or down, ingestion stalls or errors.
+That tight coupling between "save to Postgres" and "index in ES" is the <b>exact problem</b> Kafka solves
+in Project 2: the producer just emits an event and moves on; a separate consumer indexes at its own pace.
+Keep this coupling in mind — it's the cliffhanger.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>What does a mapping decide, and what breaks if you let ES auto-detect types instead?</li>
+  <li>Why does <code>text</code> vs <code>keyword</code> matter for searching vs aggregating?</li>
+  <li>What makes both your Postgres save and your ES index <i>idempotent</i>?</li>
+</ol></div>
+
+<div class="deeper"><span class="tag">Go deeper — canonical</span>
+<ul class="clean">
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html">Elasticsearch — mapping</a> and <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/text.html">text vs keyword</a></li>
+  <li><a href="https://elasticsearch-py.readthedocs.io/en/stable/helpers.html">elasticsearch-py — bulk helpers</a></li>
+</ul></div>
+
+<!-- ============================================================= -->
+<h2 id="search"><span class="num">9</span> · Build the search endpoint</h2>
+<p><b>Teach.</b> Now the payoff: a <code>GET /api/search</code> that runs an ES query and returns ranked
+results. We'll grow the query DSL in passes — start with a bare full-text match, then add filters, then
+pagination — so you understand each clause of a <code>bool</code> query rather than copy a finished blob.</p>
+
+<h3>Pass 1 — a bare full-text match</h3>
+<span class="path">events/views.py — add a search view</span>
+<pre><code class="language-python">from rest_framework.views import APIView
+from rest_framework.response import Response
+from .search import es, INDEX
+
+
+class SearchView(APIView):
+    def get(self, request):
+        q = request.query_params.get("q", "")
+        body = {
+            "query": {
+                "multi_match": {
+                    "query": q,
+                    "fields": ["message", "repo_name", "actor_login"],
+                }
+            }
+        }
+        res = es.search(index=INDEX, body=body)
+        hits = [h["_source"] | {"score": h["_score"]} for h in res["hits"]["hits"]]
+        return Response({"total": res["hits"]["total"]["value"], "results": hits})</code></pre>
+<div class="note why"><span class="tag">Why <code>multi_match</code></span>
+It runs the same query text across several fields and takes the best score per document — so "kubernetes"
+hits whether it appears in a commit message, a repo name, or (unlikely) a username. The
+<code>_score</code> is ES's relevance ranking; returning it lets you see <i>why</i> results are ordered
+as they are.</div>
+
+<h3>Pass 2 — add filters with a <code>bool</code> query</h3>
+<p><b>Teach.</b> A <code>bool</code> query composes clauses: <code>must</code> affects score (the search),
+<code>filter</code> narrows without affecting score (exact <code>type</code>/<code>actor</code>). Restructure
+the body — this is the meaningful change:</p>
+<span class="path">events/views.py — replace the body in SearchView.get</span>
+<pre><code class="language-python">        q = request.query_params.get("q", "")
+        event_type = request.query_params.get("type")
+        actor = request.query_params.get("actor")
+
+        must = []
+        if q:
+            must.append({"multi_match": {"query": q,
+                        "fields": ["message", "repo_name", "actor_login"]}})
+        else:
+            must.append({"match_all": {}})        # no q -> everything, still filterable
+
+        filters = []
+        if event_type:
+            filters.append({"term": {"type": event_type}})
+        if actor:
+            filters.append({"term": {"actor_login": actor}})
+
+        body = {"query": {"bool": {"must": must, "filter": filters}}}</code></pre>
+
+<h3>Pass 3 — pagination + sort</h3>
+<p>Add <code>from</code>/<code>size</code> paging on top of the body you just built:</p>
+<span class="path">events/views.py — before the es.search call</span>
+<pre><code class="language-python">        page = int(request.query_params.get("page", 1))
+        size = min(int(request.query_params.get("size", 25)), 100)  # cap it
+        body["from"] = (page - 1) * size
+        body["size"] = size
+        body["sort"] = ["_score", {"created_at": "desc"}]   # relevance, then newest</code></pre>
+<span class="path">config/urls.py — register the route</span>
+<pre><code class="language-python">from events.views import GithubEventViewSet, SearchView
+# ...in urlpatterns, above the router include:
+    path("api/search", SearchView.as_view(), name="search"),</code></pre>
+<details><summary>Solution — search it end to end <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Full-text across everything you've ingested
+http ":8000/api/search?q=fix"
+
+# Full-text + an exact filter
+http ":8000/api/search?q=fix&amp;type=PushEvent"
+
+# No query, pure filter + paging
+http ":8000/api/search?actor=torvalds&amp;page=1&amp;size=10"</code></pre>
+<div class="note why"><span class="tag">must vs filter — the payoff</span>
+Put <code>type=PushEvent</code> in <code>filter</code>, not <code>must</code>, and ES skips scoring it and
+can <b>cache</b> the result set — filters are reusable across queries. <code>must</code> clauses compute
+relevance; filters just include/exclude. Getting this split right is most of writing good ES queries.</div>
+</div></details>
+
+<div class="rep"><b>Your Rep:</b> add <code>GET /api/stats</code> that returns the <b>top 10 repos</b> by event
+count — an ES <i>aggregation</i>, not a search. (Hint: <code>size: 0</code> to skip hits, and a
+<code>terms</code> aggregation on <code>repo_name.raw</code> — remember why you made that
+<code>.raw</code> subfield.)</div>
+<details><summary>Solution — a terms aggregation <span class="kind">code</span></summary>
+<div class="body">
+<span class="path">events/views.py</span>
+<pre><code class="language-python">class StatsView(APIView):
+    def get(self, request):
+        body = {
+            "size": 0,   # we only want the aggregation, not documents
+            "aggs": {
+                "top_repos": {
+                    "terms": {"field": "repo_name.raw", "size": 10}
+                }
+            },
+        }
+        res = es.search(index=INDEX, body=body)
+        buckets = res["aggregations"]["top_repos"]["buckets"]
+        return Response([{"repo": b["key"], "events": b["doc_count"]} for b in buckets])</code></pre>
+<div class="note why"><span class="tag">Why <code>.raw</code>, not <code>repo_name</code></span>
+Aggregating on the analyzed <code>text</code> field would group by <i>token</i> — "torvalds" and "linux"
+counted separately. The <code>keyword</code> subfield holds the whole <code>owner/repo</code> string
+un-analyzed, so the bucket keys are real repo names. This is the concrete reason the dual mapping earned
+its keep two steps ago.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>When does a clause belong in <code>must</code> vs <code>filter</code>?</li>
+  <li>What is <code>_score</code> and what happens to it under a pure <code>filter</code> query?</li>
+  <li>Why did the aggregation need <code>repo_name.raw</code> instead of <code>repo_name</code>?</li>
+</ol></div>
+
+<div class="deeper"><span class="tag">Go deeper — canonical</span>
+<ul class="clean">
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html">ES — the bool query</a> and <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html">query vs filter context</a></li>
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-terms-aggregation.html">ES — terms aggregation</a></li>
+</ul></div>
+
+<!-- ============================================================= -->
+<h2 id="compose"><span class="num">10</span> · The whole stack in one file</h2>
+<p><b>Teach.</b> So far you've run <code>db</code> and <code>search</code> in Compose but Django on your
+laptop. Now containerize the app and add it as the third service, so <code>docker compose up</code> brings
+the <i>entire</i> stack online — the same shape you'll lift into Kubernetes next project.</p>
+
+<h3>Step 1 — a Dockerfile for the app</h3>
+<span class="path">Dockerfile</span>
+<pre><code class="language-docker">FROM python:3.12-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+WORKDIR /app
+
+# Deps first (cached across code edits)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]</code></pre>
+<span class="path">.dockerignore</span>
+<pre><code class="language-text">.venv/
+__pycache__/
+*.pyc
+.git/
+db.sqlite3</code></pre>
+
+<h3>Step 2 — add the web service &amp; internal wiring</h3>
+<p><b>Teach.</b> Inside Compose, services reach each other by <i>service name</i>, not localhost — so the
+app talks to <code>db:5432</code> and <code>search:9200</code>. <code>depends_on</code> controls start
+order. Add the new <code>web</code> service:</p>
+<span class="path">docker-compose.yml — add the web service</span>
+<pre><code class="language-yaml">  web:
+    build: .
+    environment:
+      POSTGRES_HOST: db            # <-- service name, not localhost
+      POSTGRES_DB: ghevents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      ES_URL: http://search:9200   # <-- service name
+      GITHUB_TOKEN: ${GITHUB_TOKEN}   # passed through from your shell
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - search</code></pre>
+<details><summary>Solution — one command, whole system <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Build + start all three services
+docker compose up -d --build
+
+# Migrate inside the running web container (not on your laptop now)
+docker compose exec web python manage.py migrate
+
+# Ingest + index using the containerized app
+docker compose exec web python manage.py ingest_events
+docker compose exec web python manage.py reindex
+
+# Search the full stack
+http ":8000/api/search?q=kubernetes"
+http ":8000/api/stats"</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — localhost means the container</span>
+The #1 Compose confusion: inside the <code>web</code> container, <code>localhost</code> is the container
+itself, not your Mac and not the DB. Postgres lives at hostname <code>db</code>, ES at <code>search</code>
+— the service names. The env vars above are the whole reason your settings read <code>POSTGRES_HOST</code>
+from the environment back in step 4.</div>
+</div></details>
+
+<div class="rep"><b>Your Rep:</b> right now you migrate/ingest by hand after <code>up</code>. Add a fourth
+Compose service <code>ingest</code> that reuses the same image but runs the <code>--loop</code> ingester
+continuously, so the dataset grows on its own while the stack is up. What <code>command:</code> and
+<code>depends_on</code> does it need?</div>
+<details><summary>Solution — a continuous ingest worker <span class="kind">manifest</span></summary>
+<div class="body">
+<span class="path">docker-compose.yml — add another service</span>
+<pre><code class="language-yaml">  ingest:
+    build: .
+    command: ["python", "manage.py", "ingest_events", "--loop", "15"]
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ghevents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      ES_URL: http://search:9200
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    depends_on:
+      - db
+      - search</code></pre>
+<div class="note why"><span class="tag">Same image, different command</span>
+The <code>ingest</code> worker and the <code>web</code> server are the <i>same build</i> — they differ only
+in the <code>command</code> they run (gunicorn vs the loop ingester). One artifact, two roles. Hold onto
+that idea: it's exactly how you'll run a web Deployment and a worker Deployment off one image in
+Kubernetes next project.</div>
+</div></details>
+
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Inside a Compose network, how does the web service address Postgres — and why not <code>localhost</code>?</li>
+  <li>What does <code>depends_on</code> guarantee, and what does it <i>not</i> (hint: "started" ≠ "ready")?</li>
+  <li>How can one image serve as both the web server and the ingest worker?</li>
+</ol></div>
+
+<!-- ============================================================= -->
+<h2 id="recap"><span class="num">11</span> · Recap, extensions &amp; what's next</h2>
+<p>You built a real search platform over a live public firehose. Make sure you can explain each piece in
+your own words — that recall <i>is</i> the deliverable:</p>
+<ul class="clean">
+  <li><b>Django/DRF:</b> model → migration → serializer → viewset → router; a read-only API with filters and pagination.</li>
+  <li><b>Postgres:</b> env-driven config, the durable source of truth, unique constraints as a dedup net.</li>
+  <li><b>GitHub API:</b> polling a sliding-window firehose, auth for rate limits, normalizing messy nested JSON.</li>
+  <li><b>Elasticsearch:</b> inverted index, mappings (text vs keyword), bulk + idempotent indexing, bool queries (must vs filter), aggregations.</li>
+  <li><b>Docker Compose:</b> a three-service stack, service-name networking, one image in two roles.</li>
+</ul>
+
+<h3>Extensions to deepen each skill</h3>
+<ul class="clean">
+  <li>Add date-range filtering to search (<code>range</code> on <code>created_at</code>) with <code>from</code>/<code>to</code> params.</li>
+  <li>Add an aggregation for <b>events per type</b> and a second for <b>events per hour</b> (a <code>date_histogram</code>).</li>
+  <li>Highlight matched terms in results with ES <code>highlight</code>.</li>
+  <li>Add a health endpoint that checks both Postgres and ES — you'll want it for Kubernetes probes.</li>
+  <li>Write one test: ingest a canned event fixture, reindex, assert search finds it.</li>
+</ul>
+
+<div class="note why"><span class="tag">The cliffhanger → Project 2</span>
+You planted two deliberate pain points: ingestion <b>polls</b> from a loop, and each save does a
+<b>synchronous</b> ES write inline. Both couple things that shouldn't be coupled — if ES hiccups,
+ingestion suffers. Project 2 fixes exactly this: Django <i>produces</i> a <b>CloudEvent</b> to <b>Kafka</b>
+and returns; a separate <b>consumer</b> indexes into ES at its own pace; and the whole thing runs on
+<b>Kubernetes</b> (with CKAD/CKA drills baked in) instead of Compose. Same app, real decoupling.</div>
+
+<details><summary>Teardown <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Stop and remove containers, keep the pgdata volume
+docker compose down
+
+# Nuke everything including the data volume
+docker compose down -v</code></pre>
+</div></details>
+
+<footer>
+  Project 1 of the event-driven platform series · Django · DRF · PostgreSQL · Elasticsearch · Docker.<br>
+  Tip: hit <kbd>Expand all</kbd> after you've attempted a section to review every solution at once.
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  try { if (window.hljs) hljs.highlightAll(); } catch (e) {}
+
+  const all = () => document.querySelectorAll("details");
+  document.getElementById("expandAll").onclick = () => all().forEach(d => d.open = true);
+  document.getElementById("collapseAll").onclick = () => all().forEach(d => d.open = false);
+
+  document.querySelectorAll("pre").forEach((pre) => {
+    const btn = document.createElement("button");
+    btn.className = "copy-btn";
+    btn.type = "button";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", () => {
+      const code = pre.querySelector("code") || pre;
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = "Copied";
+        btn.classList.add("done");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>
