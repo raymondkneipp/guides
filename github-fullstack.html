@@ -1,0 +1,1557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Full-Stack GitHub Events Explorer — Nuxt · FastAPI</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#38bdf8; --accent2:#a78bfa; --border:#334155; --ok:#34d399; --warn:#fbbf24;
+    --code:#0b1220;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 120px}
+  header.hero{padding:28px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 8px;line-height:1.2}
+  h1 .sub{display:block;font-size:15px;color:var(--muted);font-weight:400;margin-top:8px}
+  h2{font-size:22px;margin:44px 0 6px;padding-top:12px;border-top:1px dashed var(--border)}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums}
+  h3{font-size:17px;margin:26px 0 6px;color:var(--accent2)}
+  p{margin:10px 0}
+  a{color:var(--accent)}
+  code:not(pre code){background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.92em}
+  .lead{color:var(--muted)}
+  .stack{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .chip{background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:5px 12px;font-size:13px;color:var(--muted)}
+  .chip b{color:var(--text)}
+  .task{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;
+    padding:12px 16px;margin:16px 0}
+  .task b{color:var(--accent)}
+  .rep{background:var(--panel);border-left:3px solid var(--accent2);border-radius:8px;
+    padding:12px 16px;margin:16px 0}
+  .rep b{color:var(--accent2)}
+  .recall{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.25);
+    border-radius:8px;padding:12px 16px;margin:16px 0}
+  .recall b{color:var(--ok)}
+  .recall ol{margin:6px 0 0;padding-left:20px}
+  .recall li{margin:4px 0}
+  .note{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);
+    border-radius:8px;padding:10px 14px;margin:14px 0;font-size:14px}
+  .note.why{border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08)}
+  .note.gotcha{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+  .note .tag{font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:11px;
+    display:block;margin-bottom:2px;color:var(--accent2)}
+  .note.gotcha .tag{color:var(--warn)}
+  .deeper{border:1px solid var(--border);border-radius:8px;padding:2px 14px 6px;margin:16px 0;
+    background:rgba(148,163,184,.05)}
+  .deeper .tag{font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:11px;
+    color:var(--muted);display:block;margin:10px 0 2px}
+  .deeper ul{margin:4px 0;padding-left:20px}
+  .deeper li{margin:4px 0;font-size:14px}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    margin:12px 0;overflow:hidden}
+  details[open]{border-color:var(--accent)}
+  summary{cursor:pointer;padding:11px 16px;font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:10px;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▶";color:var(--accent);font-size:11px;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{background:var(--panel2)}
+  summary .kind{margin-left:auto;font-size:11px;color:var(--muted);font-weight:500;
+    text-transform:uppercase;letter-spacing:.04em}
+  details .body{padding:0 16px 14px}
+  pre{background:var(--code)!important;border:1px solid var(--border);border-radius:8px;
+    padding:14px;overflow:auto;margin:10px 0;font-size:13.5px;line-height:1.5}
+  pre code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{position:relative}
+  .copy-btn{position:absolute;top:8px;right:8px;background:var(--panel2);color:var(--muted);
+    border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;
+    opacity:0;transition:opacity .12s;font-family:system-ui,sans-serif}
+  pre:hover .copy-btn{opacity:1}
+  .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+  .copy-btn.done{color:var(--ok);border-color:var(--ok);opacity:1}
+  .diff{color:var(--ok)}
+  .path{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--accent2);
+    margin:8px 0 -4px;display:block}
+  .toolbar{position:sticky;top:0;z-index:5;background:rgba(15,23,42,.92);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--border);
+    margin:0 -20px 0;padding:10px 20px;display:flex;gap:10px;align-items:center}
+  .toolbar button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .toolbar button:hover{border-color:var(--accent)}
+  .toolbar .grow{flex:1}
+  .toc{columns:2;gap:24px;font-size:14px;margin:12px 0 0;padding:0;list-style:none}
+  .toc li{margin:4px 0;break-inside:avoid}
+  .toc a{color:var(--muted);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  ul.clean{margin:10px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  .arch{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:16px;overflow:auto;font-family:ui-monospace,monospace;font-size:12.5px;
+    color:var(--muted);white-space:pre;line-height:1.5}
+  .series{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;font-size:13px}
+  .series .p{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;color:var(--muted)}
+  .series .p.here{border-color:var(--accent);color:var(--text)}
+  .series .p b{color:var(--accent)}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13px}
+  kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;
+    border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Full-Stack GitHub Events Explorer
+    <span class="sub"><b>Project 2 of 5</b> · Put a face on the platform with a <b>FastAPI</b> search
+    service and a <b>Nuxt (Vue)</b> UI, on top of the data from Project 1</span>
+  </h1>
+  <div class="stack">
+    <span class="chip"><b>FastAPI</b> — async search microservice</span>
+    <span class="chip"><b>Nuxt 3 / Vue</b> — the frontend</span>
+    <span class="chip"><b>Elasticsearch</b> — reused from P1</span>
+    <span class="chip"><b>Docker Compose</b> — one stack</span>
+  </div>
+  <p class="lead">Same rep loop as Project 1: <b>Teach</b> → <b>Build along</b> → a <b>Your Rep</b> task
+  you solve solo (solution in an accordion) → a <b>Recall</b> check. Files are built up in <b>small
+  passes</b>, not dropped whole. Every code block here was generated from a service that actually boots:
+  the FastAPI app passes its tests and serves <code>/docs</code>; the Nuxt app passes
+  <code>npm run build</code>.</p>
+  <div class="series">
+    <span class="p"><b>1 ✓</b> Django · ES · Docker</span>
+    <span class="p here"><b>2 ▸</b> Nuxt · FastAPI</span>
+    <span class="p">3 ▸ Kafka · Kubernetes</span>
+    <span class="p">4 ▸ Argo Workflows · Events</span>
+    <span class="p">5 ▸ Argo CD · Helm</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button id="expandAll">Expand all</button>
+  <button id="collapseAll">Collapse all</button>
+  <span class="grow"></span>
+  <span style="font-size:12px;color:var(--muted)">Click ▶ to reveal a solution</span>
+</div>
+
+<h3 style="margin-top:22px">Contents</h3>
+<ol class="toc">
+  <li><a href="#arch">0 · Why a second backend + a frontend</a></li>
+  <li><a href="#prereq">1 · Prerequisites (P1 running)</a></li>
+  <li><a href="#scaffold">2 · Scaffold the FastAPI service</a></li>
+  <li><a href="#settings">3 · Settings &amp; the ES client</a></li>
+  <li><a href="#schemas">4 · Pydantic response models</a></li>
+  <li><a href="#search">5 · The /search endpoint</a></li>
+  <li><a href="#stats">6 · /stats &amp; /event/&lt;id&gt;</a></li>
+  <li><a href="#run-api">7 · Wire the app &amp; run it</a></li>
+  <li><a href="#test">8 · Test it without a real Elasticsearch</a></li>
+  <li><a href="#docker-api">9 · Containerize the API</a></li>
+  <li><a href="#nuxt">10 · Scaffold the Nuxt frontend</a></li>
+  <li><a href="#proxy">11 · Runtime config &amp; the server proxy</a></li>
+  <li><a href="#searchpage">12 · The search page</a></li>
+  <li><a href="#statspage">13 · The stats page</a></li>
+  <li><a href="#run-full">14 · Run the whole thing locally</a></li>
+  <li><a href="#compose">15 · The full stack in Compose</a></li>
+  <li><a href="#recap">16 · Recap &amp; what's next</a></li>
+</ol>
+
+
+<h2 id="arch"><span class="num">0</span> · Why a second backend + a frontend</h2>
+<p>Project 1 left you with a real platform: Postgres and Elasticsearch full of live GitHub events, and a
+Django/DRF API. It had no face, and it did everything with one framework. This project fixes both — and
+in doing so teaches a pattern you'll meet in every real system: <b>polyglot services</b>.</p>
+
+<div class="arch">
+   ┌──────────────┐   /api/search    ┌──────────────────┐   query    ┌───────────────┐
+   │   Nuxt (Vue) │ ───────────────▶ │  FastAPI         │ ─────────▶ │ Elasticsearch │
+   │   browser UI │   (server proxy) │  search-api      │  (async)   │  (from P1)    │
+   └──────────────┘ ◀─────────────── └──────────────────┘ ◀───────── └───────▲───────┘
+                        JSON                                                  │ indexed
+                                                                              │ by P1's
+   ┌──────────────┐   writes/admin   ┌──────────────────┐   write    ┌────────┴──────┐
+   │  (P1) Django │ ───────────────▶ │  ingest + ORM    │ ─────────▶ │  PostgreSQL   │
+   └──────────────┘                  └──────────────────┘            └───────────────┘
+
+         Django owns WRITES + ingest. FastAPI owns READS/search. Nuxt is the UI.
+</div>
+
+<div class="note why"><span class="tag">Why not just add this to Django?</span>
+You could. But splitting responsibilities is the lesson: <b>Django</b> shines at the ORM, migrations,
+admin, and write-side business logic; <b>FastAPI</b> is a lean, async, auto-documented layer that's
+perfect for a read-heavy search API talking to Elasticsearch. Running both against the same data is a
+genuine, common architecture — and it means by Project 3 you'll have <i>two</i> services to put on Kafka
+and <i>three</i> to deploy to Kubernetes. More services, more reps.</div>
+
+<ul class="clean">
+  <li><b>FastAPI</b> — async endpoints, Pydantic models, automatic OpenAPI docs, querying ES.</li>
+  <li><b>Nuxt 3 (Vue)</b> — pages, composables (<code>useFetch</code>), a Nitro server proxy, SSR.</li>
+  <li><b>Elasticsearch</b> — the <i>same</i> <code>github-events</code> index P1 built. We only read it.</li>
+  <li><b>Docker Compose</b> — the P1 stack grows two more services and comes up with one command.</li>
+</ul>
+<div class="note gotcha"><span class="tag">This project depends on Project 1</span>
+The FastAPI service reads the <code>github-events</code> Elasticsearch index that Project 1 creates and
+fills. Do P1 first (at least far enough to have ingested + reindexed some events), or nothing here will
+return results. Step 1 gives you the exact commands to get P1's data flowing again.</div>
+
+
+<h2 id="prereq"><span class="num">1</span> · Prerequisites (get P1's data flowing)</h2>
+<p>You need Project 1's toolbelt plus <b>Node</b>. Nothing to solve here.</p>
+<ul class="clean">
+  <li><b>Everything from P1</b> — <code>uv</code>, Docker/Podman + Compose, the P1 repo.</li>
+  <li><b>Node.js 20+</b> (22 or 24 ideal) and <b>npm</b> — for Nuxt.</li>
+</ul>
+<div class="task"><b>Build along:</b> from your Project 1 repo, bring the stack up and make sure
+Elasticsearch actually has events in it — that's the fuel for everything below.</div>
+<details><summary>Solution — verify P1 has data <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">cd gh-events            # your Project 1 repo
+
+# Bring up Postgres + Elasticsearch (and web) from P1
+docker compose up -d db search
+
+# Ingest a batch and mirror it into ES (P1 commands)
+export GITHUB_TOKEN=ghp_your_token_here
+uv run python manage.py ingest_events
+uv run python manage.py reindex
+
+# Confirm the index exists and has documents
+curl -s localhost:9200/github-events/_count
+# -&gt; {"count": 130, ...}   any non-zero count is good</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — an empty index isn't an error</span>
+If <code>_count</code> is 0, the API and UI will "work" but show nothing, which looks like a bug. Always
+seed data first. If the index doesn't exist at all (<code>index_not_found_exception</code>), you skipped
+P1's <code>reindex</code> step — run it.</div>
+</div></details>
+
+
+<h2 id="scaffold"><span class="num">2</span> · Scaffold the FastAPI service</h2>
+<p><b>Teach.</b> We'll build the search service as its own project folder, <code>search-api/</code>, a
+sibling of the Django code. It's a separate service with its own dependencies — that independence is the
+whole point of splitting it out.</p>
+<div class="task"><b>Build along:</b> create <code>search-api/</code>, init a uv project, and add FastAPI,
+uvicorn, the async Elasticsearch client, and Pydantic.</div>
+<details><summary>Solution — project setup <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># From your repo root, next to manage.py:
+mkdir search-api &amp;&amp; cd search-api
+uv init --bare --python 3.12
+
+# uvicorn = the ASGI server. NOTE the [async] extra on elasticsearch — see the gotcha.
+uv add fastapi "uvicorn[standard]" "elasticsearch[async]&gt;=8,&lt;9" "pydantic&gt;=2"
+uv add --dev pytest httpx        # for the test in step 8
+
+# package dirs
+mkdir -p app/routers tests
+touch app/__init__.py app/routers/__init__.py</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — you need <code>elasticsearch[async]</code>, not <code>elasticsearch</code></span>
+The async client (<code>AsyncElasticsearch</code>) requires an async HTTP backend (<code>aiohttp</code>)
+that the bare package does <b>not</b> pull in. Because we construct the client at import time, a plain
+<code>elasticsearch</code> dependency blows up the moment the app loads — before any request — with
+<code>ValueError: You must have 'aiohttp' installed…</code>. The <code>[async]</code> extra fixes it.
+This bites even in tests that never touch a real ES, because the client object is still created.</div>
+</div></details>
+
+
+<h2 id="settings"><span class="num">3</span> · Settings &amp; the ES client</h2>
+<p><b>Teach.</b> Same 12-factor idea as P1: the Elasticsearch URL and index name come from the
+environment so the identical code runs on your laptop (<code>localhost:9200</code>) and in Compose
+(<code>search:9200</code>). Then one shared async client for the whole process.</p>
+<span class="path">search-api/app/settings.py</span>
+<pre><code class="language-python">import os
+
+
+class Settings:
+    """Minimal env-driven settings."""
+
+    ES_URL: str = os.environ.get("ES_URL", "http://localhost:9200")
+    ES_INDEX: str = os.environ.get("ES_INDEX", "github-events")
+
+
+settings = Settings()</code></pre>
+<span class="path">search-api/app/es.py</span>
+<pre><code class="language-python">from elasticsearch import AsyncElasticsearch
+
+from app.settings import settings
+
+# Single shared async client for the app's lifetime.
+es = AsyncElasticsearch(hosts=[settings.ES_URL])</code></pre>
+<div class="note why"><span class="tag">Why one shared client</span>
+<code>AsyncElasticsearch</code> holds a connection pool. You create it <b>once</b> at import and reuse it
+across every request — building a new client per request would leak connections and kill throughput. The
+same rule applied to the Kafka producer in P1.</div>
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Why does <code>ES_URL</code> default to <code>localhost:9200</code> but get overridden in Compose?</li>
+  <li>What would go wrong if you built a new <code>AsyncElasticsearch</code> inside each endpoint?</li>
+</ol></div>
+
+
+<h2 id="schemas"><span class="num">4</span> · Pydantic response models</h2>
+<p><b>Teach.</b> FastAPI uses <b>Pydantic</b> models to define and validate the shape of responses. Declare
+what a search hit looks like once, and FastAPI both enforces it and publishes it in the auto-generated
+OpenAPI docs. This is the FastAPI analogue of a DRF serializer.</p>
+<span class="path">search-api/app/schemas.py</span>
+<pre><code class="language-python">from pydantic import BaseModel
+
+
+class EventHit(BaseModel):
+    type: str
+    actor_login: str
+    repo_name: str
+    message: str
+    created_at: str
+    score: float
+
+
+class SearchResponse(BaseModel):
+    total: int
+    results: list[EventHit]
+
+
+class RepoStat(BaseModel):
+    repo: str
+    events: int</code></pre>
+<div class="note why"><span class="tag">Why declare response models</span>
+Set as a route's <code>response_model</code> (next steps), these classes make FastAPI validate and
+filter the output, generate typed JSON schema for <code>/docs</code>, and give your editor autocomplete.
+The frontend's TypeScript types in step 12 mirror these exactly — one contract, both ends.</div>
+
+
+<h2 id="search"><span class="num">5</span> · The /search endpoint</h2>
+<p><b>Teach.</b> This is the same Elasticsearch query you wrote in P1 — <code>multi_match</code> for the
+text, a <code>bool</code> query to add filters — but now served by an <code>async</code> FastAPI handler.
+We build it in two passes: first a bare full-text search, then filters and pagination.</p>
+
+<h3>Pass 1 — full-text only</h3>
+<p>Notice <code>_to_hit</code> maps one ES hit (its <code>_source</code> plus the relevance
+<code>_score</code>) into your Pydantic model. The handler is <code>async def</code> and
+<code>await</code>s the client.</p>
+<span class="path">search-api/app/routers/search.py — first pass</span>
+<pre><code class="language-python">from fastapi import APIRouter
+from app.es import es
+from app.schemas import EventHit, SearchResponse
+from app.settings import settings
+
+router = APIRouter()
+
+
+def _to_hit(hit: dict) -&gt; EventHit:
+    src = hit.get("_source", {})
+    return EventHit(
+        type=src.get("type", ""),
+        actor_login=src.get("actor_login", ""),
+        repo_name=src.get("repo_name", ""),
+        message=src.get("message", ""),
+        created_at=src.get("created_at", ""),
+        score=hit.get("_score") or 0.0,
+    )
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search(q: str = ""):
+    query = {"multi_match": {"query": q, "fields": ["message", "repo_name", "actor_login"]}} \
+        if q else {"match_all": {}}
+    resp = await es.search(index=settings.ES_INDEX, query=query)
+    hits = resp["hits"]
+    total = hits["total"]["value"] if isinstance(hits["total"], dict) else hits["total"]
+    return SearchResponse(total=total, results=[_to_hit(h) for h in hits["hits"]])</code></pre>
+<div class="note why"><span class="tag">Why <code>async</code> here</span>
+An ES query is I/O — your handler spends its time waiting on the network. <code>async</code> lets the
+one process serve other requests during that wait instead of blocking a thread. That's FastAPI's core
+advantage for a read API like this, and why we use <code>AsyncElasticsearch</code>.</div>
+
+<h3>Pass 2 — filters + pagination</h3>
+<p><b>Teach.</b> Add <code>type</code>/<code>actor</code> filters (in <code>filter</code> context, not
+scored) and <code>page</code>/<code>size</code> paging. Note <code>from_</code> has a trailing underscore
+because <code>from</code> is a reserved word in Python — the elasticsearch v8 client expects exactly
+that. Here's the finished router with <code>/search</code> upgraded:</p>
+<span class="path">search-api/app/routers/search.py</span>
+<pre><code class="language-python">from elasticsearch import NotFoundError
+from fastapi import APIRouter, HTTPException, Query
+
+from app.es import es
+from app.schemas import EventHit, RepoStat, SearchResponse
+from app.settings import settings
+
+router = APIRouter()
+
+
+def _to_hit(hit: dict) -&gt; EventHit:
+    src = hit.get("_source", {})
+    return EventHit(
+        type=src.get("type", ""),
+        actor_login=src.get("actor_login", ""),
+        repo_name=src.get("repo_name", ""),
+        message=src.get("message", ""),
+        created_at=src.get("created_at", ""),
+        score=hit.get("_score") or 0.0,
+    )
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search(
+    q: str = "",
+    type: str | None = None,
+    actor: str | None = None,
+    page: int = 1,
+    size: int = Query(25, le=100),
+):
+    must = (
+        {"multi_match": {"query": q, "fields": ["message", "repo_name", "actor_login"]}}
+        if q
+        else {"match_all": {}}
+    )
+
+    filters: list[dict] = []
+    if type:
+        filters.append({"term": {"type": type}})
+    if actor:
+        filters.append({"term": {"actor_login": actor}})
+
+    query = {"bool": {"must": must, "filter": filters}}
+
+    resp = await es.search(
+        index=settings.ES_INDEX,
+        query=query,
+        from_=(page - 1) * size,
+        size=size,
+        sort=["_score", {"created_at": "desc"}],
+    )
+
+    hits = resp["hits"]
+    total = hits["total"]["value"] if isinstance(hits["total"], dict) else hits["total"]
+    results = [_to_hit(h) for h in hits["hits"]]
+    return SearchResponse(total=total, results=results)
+
+
+@router.get("/stats", response_model=list[RepoStat])
+async def stats():
+    resp = await es.search(
+        index=settings.ES_INDEX,
+        size=0,
+        aggs={"repos": {"terms": {"field": "repo_name.raw", "size": 10}}},
+    )
+    buckets = resp["aggregations"]["repos"]["buckets"]
+    return [RepoStat(repo=b["key"], events=b["doc_count"]) for b in buckets]
+
+
+@router.get("/event/{event_id}", response_model=EventHit)
+async def get_event(event_id: str):
+    try:
+        doc = await es.get(index=settings.ES_INDEX, id=event_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return _to_hit(doc)</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — v8 kwargs, not <code>body=</code></span>
+The elasticsearch-py <b>v8</b> client takes query pieces as top-level keyword args
+(<code>query=</code>, <code>from_=</code>, <code>size=</code>, <code>sort=</code>, <code>aggs=</code>) —
+<b>not</b> the old <code>body={...}</code> dict. Passing <code>body=</code> is deprecated and mixing the
+two raises. And it's <code>from_</code> with the underscore, every time.</div>
+<div class="note gotcha"><span class="tag">Gotcha — the size cap returns 422, not a clamp</span>
+<code>size: int = Query(25, le=100)</code> makes FastAPI <i>reject</i> <code>?size=500</code> with a 422
+validation error (and documents the limit in <code>/docs</code>) rather than silently clamping. If you'd
+rather clamp, drop the <code>le=</code> and use <code>min(size, 100)</code> in the body instead — a
+deliberate design choice, not an accident.</div>
+
+<div class="rep"><b>Your Rep:</b> add a <code>?repo=</code> filter. Since <code>repo_name</code> is analyzed
+text, an exact <code>term</code> won't behave like the others — decide between a <code>match</code> on
+<code>repo_name</code> (fuzzy) and a <code>term</code> on <code>repo_name.raw</code> (exact). Implement one
+and be able to say why.</div>
+<details><summary>Solution — the repo filter <span class="kind">code</span></summary>
+<div class="body">
+<pre><code class="language-python"># in search(), add the param:
+    repo: str | None = None,
+# ...and inside the filters block:
+    if repo:
+        filters.append({"term": {"repo_name.raw": repo}})   # exact owner/repo</code></pre>
+<div class="note why"><span class="tag">Why <code>.raw</code></span>
+A <code>term</code> query is not analyzed, so matching against the analyzed <code>repo_name</code> field
+would usually fail. The <code>repo_name.raw</code> keyword subfield (from P1's mapping) holds the whole
+<code>owner/repo</code> string un-tokenized — exactly what an exact filter needs. Want "contains"
+behavior instead? Use <code>{"match": {"repo_name": repo}}</code> in <code>must</code>.</div>
+</div></details>
+
+
+<h2 id="stats"><span class="num">6</span> · /stats &amp; /event/&lt;id&gt;</h2>
+<p><b>Teach.</b> Those two routes already live in the file you just wrote — let's read them on their own.
+<code>/stats</code> is a pure <b>aggregation</b>: <code>size: 0</code> means "return no documents, just the
+buckets," and a <code>terms</code> agg on <code>repo_name.raw</code> gives the top repos by event count.
+<code>/event/&lt;id&gt;</code> is a direct document lookup that turns a missing doc into a clean 404.</p>
+<pre><code class="language-python">@router.get("/stats", response_model=list[RepoStat])
+async def stats():
+    resp = await es.search(
+        index=settings.ES_INDEX,
+        size=0,
+        aggs={"repos": {"terms": {"field": "repo_name.raw", "size": 10}}},
+    )
+    buckets = resp["aggregations"]["repos"]["buckets"]
+    return [RepoStat(repo=b["key"], events=b["doc_count"]) for b in buckets]
+
+
+@router.get("/event/{event_id}", response_model=EventHit)
+async def get_event(event_id: str):
+    try:
+        doc = await es.get(index=settings.ES_INDEX, id=event_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return _to_hit(doc)</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — catch <code>NotFoundError</code>, don't guess</span>
+<code>es.get()</code> on a missing id <b>raises</b> <code>elasticsearch.NotFoundError</code> (whose v8
+constructor needs <code>meta=</code>/<code>body=</code> if you ever construct one yourself). Catch it and
+re-raise as <code>HTTPException(404)</code> so the client gets a proper 404 instead of a 500.</div>
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>What does <code>size: 0</code> do in an aggregation query, and why do you want it here?</li>
+  <li>Why aggregate on <code>repo_name.raw</code> instead of <code>repo_name</code>? (Same reason as P1.)</li>
+  <li>What HTTP status should a lookup of a non-existent event return, and how do you make that happen?</li>
+</ol></div>
+
+
+<h2 id="run-api"><span class="num">7</span> · Wire the app &amp; run it</h2>
+<p><b>Teach.</b> <code>main.py</code> creates the FastAPI app, adds CORS (so a browser on another origin
+could call it directly), mounts the router, and adds a <code>/health</code> endpoint you'll want for
+Kubernetes probes later.</p>
+<span class="path">search-api/app/main.py</span>
+<pre><code class="language-python">from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.routers import search
+
+app = FastAPI(title="GitHub Events Search API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # dev only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(search.router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}</code></pre>
+<div class="task"><b>Build along:</b> run it and open the free interactive docs.</div>
+<details><summary>Solution — run &amp; poke it <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># ES from P1 must be up (localhost:9200). Then:
+uv run uvicorn app.main:app --reload --port 8001
+
+# health
+curl -s localhost:8001/health          # {"status":"ok"}
+
+# real search against P1's data
+curl -s "localhost:8001/search?q=fix" | jq '.total'
+curl -s "localhost:8001/search?type=PushEvent&amp;size=3" | jq '.results[].repo_name'
+curl -s localhost:8001/stats | jq
+
+# the auto-generated interactive API docs:
+open http://localhost:8001/docs</code></pre>
+<div class="note why"><span class="tag">Why port 8001</span>
+We reserve 8000 for Django (P1) and run FastAPI on <b>8001</b>, so both backends can run at once. The
+Nuxt frontend will default to calling <code>http://localhost:8001</code> — keep them consistent.</div>
+<div class="note why"><span class="tag">Free docs</span>
+<code>/docs</code> (Swagger UI) and <code>/redoc</code> come from your Pydantic models with zero extra
+work — try a search right in the browser. That auto-documentation is a big reason to reach for FastAPI on
+a read API.</div>
+</div></details>
+
+
+<h2 id="test"><span class="num">8</span> · Test it without a real Elasticsearch</h2>
+<p><b>Teach.</b> You don't want your unit tests to require a running ES cluster — that's slow and flaky.
+The trick: <b>monkeypatch</b> the async client's methods to return canned responses. Then you can assert
+both the response shape <i>and</i> the query your code built, in milliseconds, with no cluster.</p>
+<span class="path">search-api/tests/test_search.py</span>
+<pre><code class="language-python">import pytest
+from elasticsearch import NotFoundError
+from fastapi.testclient import TestClient
+
+from app import es as es_module
+from app.main import app
+
+client = TestClient(app)
+
+
+# ---- canned ES responses -------------------------------------------------
+
+SEARCH_HITS = {
+    "hits": {
+        "total": {"value": 1},
+        "hits": [
+            {
+                "_id": "42",
+                "_score": 3.5,
+                "_source": {
+                    "type": "PushEvent",
+                    "actor_login": "octocat",
+                    "repo_name": "octocat/hello",
+                    "message": "fix the bug",
+                    "created_at": "2026-07-09T00:00:00Z",
+                },
+            }
+        ],
+    }
+}
+
+STATS_AGG = {
+    "hits": {"total": {"value": 0}, "hits": []},
+    "aggregations": {
+        "repos": {
+            "buckets": [
+                {"key": "octocat/hello", "doc_count": 12},
+                {"key": "torvalds/linux", "doc_count": 7},
+            ]
+        }
+    },
+}
+
+EVENT_DOC = {
+    "_id": "42",
+    "_source": {
+        "type": "PushEvent",
+        "actor_login": "octocat",
+        "repo_name": "octocat/hello",
+        "message": "fix the bug",
+        "created_at": "2026-07-09T00:00:00Z",
+    },
+}
+
+
+@pytest.fixture
+def stub_es(monkeypatch):
+    """Monkeypatch the async ES client. Records last kwargs for assertions."""
+    calls = {}
+
+    async def fake_search(**kwargs):
+        calls["search"] = kwargs
+        if kwargs.get("size") == 0:  # /stats path
+            return STATS_AGG
+        return SEARCH_HITS
+
+    async def fake_get(**kwargs):
+        calls["get"] = kwargs
+        if kwargs.get("id") == "missing":
+            raise NotFoundError("not found", meta=None, body=None)
+        return EVENT_DOC
+
+    monkeypatch.setattr(es_module.es, "search", fake_search)
+    monkeypatch.setattr(es_module.es, "get", fake_get)
+    return calls
+
+
+# ---- tests ---------------------------------------------------------------
+
+def test_health():
+    r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+
+
+def test_search_maps_hits(stub_es):
+    r = client.get("/search?q=fix")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 1
+    assert len(body["results"]) == 1
+    hit = body["results"][0]
+    assert hit["type"] == "PushEvent"
+    assert hit["actor_login"] == "octocat"
+    assert hit["repo_name"] == "octocat/hello"
+    assert hit["message"] == "fix the bug"
+    assert hit["score"] == 3.5
+    # q present -&gt; multi_match, not match_all
+    query = stub_es["search"]["query"]
+    assert "multi_match" in query["bool"]["must"]
+
+
+def test_search_type_filter_in_query(stub_es):
+    r = client.get("/search?type=PushEvent")
+    assert r.status_code == 200
+    query = stub_es["search"]["query"]
+    # no q -&gt; match_all
+    assert "match_all" in query["bool"]["must"]
+    # type -&gt; term filter
+    assert {"term": {"type": "PushEvent"}} in query["bool"]["filter"]
+    # v8 kwargs present
+    assert stub_es["search"]["from_"] == 0
+    assert stub_es["search"]["sort"] == ["_score", {"created_at": "desc"}]
+
+
+def test_search_size_capped(stub_es):
+    r = client.get("/search?size=500")
+    assert r.status_code == 422  # Query(le=100) rejects over-cap
+
+
+def test_stats_maps_buckets(stub_es):
+    r = client.get("/stats")
+    assert r.status_code == 200
+    body = r.json()
+    assert body == [
+        {"repo": "octocat/hello", "events": 12},
+        {"repo": "torvalds/linux", "events": 7},
+    ]
+    assert stub_es["search"]["size"] == 0
+
+
+def test_event_found(stub_es):
+    r = client.get("/event/42")
+    assert r.status_code == 200
+    assert r.json()["repo_name"] == "octocat/hello"
+
+
+def test_event_not_found(stub_es):
+    r = client.get("/event/missing")
+    assert r.status_code == 404</code></pre>
+<div class="task"><b>Build along:</b> run the suite.</div>
+<details><summary>Solution — run the tests <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">uv run pytest -q
+# -&gt; 7 passed</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — the stub must be <code>async</code></span>
+The real <code>.search</code>/<code>.get</code> are coroutines, so your fakes must be <code>async def</code>
+too (they return awaitables). A plain <code>def</code> returning a dict breaks the <code>await</code>. The
+fixture also records the kwargs your code passed, so a test can assert the <code>term</code> filter and
+<code>from_</code>/<code>sort</code> actually made it into the query — testing behavior, not just output.</div>
+<div class="note why"><span class="tag">Why FastAPI's TestClient is enough</span>
+<code>TestClient</code> is synchronous and drives your async endpoints for you — no
+<code>pytest-asyncio</code> needed for this style. It spins the app in-process and issues real HTTP-shaped
+calls.</div>
+</div></details>
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Why is monkeypatching the ES client better than pointing tests at a real cluster?</li>
+  <li>Why must the fake methods be <code>async def</code>?</li>
+  <li>How does the test assert on the <i>query you built</i>, not just the response?</li>
+</ol></div>
+
+
+<h2 id="docker-api"><span class="num">9</span> · Containerize the API</h2>
+<p><b>Teach.</b> Same uv-based Dockerfile pattern as P1's Django image — copy the lockfile first for
+layer caching, then the code — but the command is <code>uvicorn</code> and the port is 8001. No
+<code>--reload</code> in the container.</p>
+<span class="path">search-api/Dockerfile</span>
+<pre><code class="language-docker">FROM python:3.12-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+WORKDIR /app
+
+# Deps first for layer caching
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 8001
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]</code></pre>
+<span class="path">search-api/.dockerignore</span>
+<pre><code class="language-text">.venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/</code></pre>
+<div class="note why"><span class="tag">Why no <code>--reload</code></span>
+<code>--reload</code> watches files and restarts on change — great for local dev, wasteful and slightly
+risky in a container image meant to run unattended. We'll still add the reload flag when running locally;
+the image ships the plain command.</div>
+
+
+<h2 id="nuxt"><span class="num">10</span> · Scaffold the Nuxt frontend</h2>
+<p><b>Teach.</b> <a href="https://nuxt.com/">Nuxt</a> is the batteries-included framework for
+<a href="https://vuejs.org/">Vue</a>: file-based routing (<code>pages/</code>), data fetching helpers
+(<code>useFetch</code>), and a built-in server (<b>Nitro</b>) we'll use as a proxy. We build a small
+two-page app: a search page and a stats page.</p>
+<div class="task"><b>Build along:</b> scaffold a Nuxt <b>3</b> app in <code>frontend/</code>. Heads up — the
+current <code>nuxi init</code> gives you Nuxt <b>4</b>; the gotcha shows how to pin to 3.</div>
+<details><summary>Solution — scaffold &amp; pin to Nuxt 3 <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># From repo root, next to search-api/:
+npx nuxi@latest init frontend --template minimal --package-manager npm --no-install --no-gitInit
+cd frontend
+
+# The template targets Nuxt 4. For a Nuxt 3 app: pin nuxt "^3.19.2" and
+# vue-router "^4.5.0" in package.json, then remove the Nuxt-4 app/ dir:
+rm -rf app
+npm install</code></pre>
+<span class="path">frontend/package.json (the versions this guide was built + verified against)</span>
+<span class="path">frontend/package.json</span>
+<pre><code class="language-json">{
+  "name": "frontend",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "nuxt": "^3.19.2",
+    "vue": "^3.5.39",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.7"
+  }
+}</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — <code>nuxi init</code> scaffolds Nuxt 4 now</span>
+The current minimal template pins <code>nuxt: ^4</code>, a <code>vue-router: ^5</code>, and nests
+<code>app.vue</code> inside an <code>app/</code> directory. For this Nuxt 3 guide: pin <code>nuxt</code> to
+<code>^3</code> and <code>vue-router</code> to <code>^4</code>, delete the <code>app/</code> dir, and use
+the classic flat layout (root <code>app.vue</code>, <code>pages/</code>, <code>server/</code>).</div>
+<div class="note gotcha"><span class="tag">Gotcha — fix <code>tsconfig.json</code> too</span>
+The Nuxt 4 template's <code>tsconfig.json</code> references <code>.nuxt/tsconfig.app.json</code> and
+friends that Nuxt 3 never generates, which fails the build with <code>[TSCONFIG_ERROR] Tsconfig not
+found</code>. Replace the file with the Nuxt 3 one-liner:
+<pre><code class="language-json">{
+  "extends": "./.nuxt/tsconfig.json"
+}</code></pre>
+</div>
+</div></details>
+
+
+<h2 id="proxy"><span class="num">11</span> · Runtime config &amp; the server proxy</h2>
+<p><b>Teach.</b> The browser should never call FastAPI directly — that means CORS headaches and leaking
+the API's address into client JS. Instead, the Nuxt <b>Nitro server</b> exposes <code>/api/search</code>
+and <code>/api/stats</code> routes that run on the server and forward to FastAPI. The browser only ever
+talks to Nuxt's own origin.</p>
+
+<h3>Step 1 — where the API URL lives</h3>
+<p><code>runtimeConfig</code> holds the FastAPI base URL, overridable by an env var at run time (crucial
+for Compose/K8s, where it becomes <code>http://search-api:8001</code>).</p>
+<span class="path">frontend/nuxt.config.ts</span>
+<pre><code class="language-ts">// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  compatibilityDate: '2025-07-15',
+  devtools: { enabled: true },
+
+  // Global stylesheet
+  css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    // Private (server-only). This is what the Nitro server routes use.
+    apiBase: process.env.API_BASE || 'http://localhost:8001',
+    public: {
+      // Exposed to the client too, in case you ever call the API directly.
+      apiBase: process.env.API_BASE || 'http://localhost:8001',
+    },
+  },
+})</code></pre>
+
+<h3>Step 2 — the proxy routes</h3>
+<p>Each Nitro handler reads the config, grabs the incoming query params, and <code>$fetch</code>es the
+FastAPI backend. Return-type annotations keep it a typed proxy.</p>
+<span class="path">frontend/server/api/search.get.ts</span>
+<pre><code class="language-ts">import type { SearchResponse } from '~/types/api'
+
+// Server-side proxy: the browser calls /api/search, and this Nitro handler
+// forwards the request to the FastAPI backend. Keeps the real API URL
+// server-side and avoids browser CORS entirely.
+export default defineEventHandler(async (event): Promise&lt;SearchResponse&gt; =&gt; {
+  const config = useRuntimeConfig(event)
+
+  // Pass through the query params the page sent (q, type, actor, page, size).
+  const query = getQuery(event)
+
+  return await $fetch&lt;SearchResponse&gt;('/search', {
+    baseURL: config.apiBase,
+    query,
+  })
+})</code></pre>
+<span class="path">frontend/server/api/stats.get.ts</span>
+<pre><code class="language-ts">import type { RepoStat } from '~/types/api'
+
+// Server-side proxy for /stats -&gt; FastAPI backend.
+export default defineEventHandler(async (event): Promise&lt;RepoStat[]&gt; =&gt; {
+  const config = useRuntimeConfig(event)
+
+  return await $fetch&lt;RepoStat[]&gt;('/stats', {
+    baseURL: config.apiBase,
+  })
+})</code></pre>
+<div class="note why"><span class="tag">Why proxy at all</span>
+Three wins: <b>no CORS</b> (same-origin from the browser's view), the FastAPI URL stays
+<b>server-side</b> (the private <code>apiBase</code>, not <code>public</code>), and you get one place to
+add caching/auth later. The pages call <code>/api/search</code>; they never know FastAPI's real address.</div>
+<div class="note gotcha"><span class="tag">Gotcha — pass <code>event</code> to <code>useRuntimeConfig</code></span>
+In a Nitro handler you call <code>useRuntimeConfig(event)</code> (with the event), and read query params
+with <code>getQuery(event)</code>. At <b>runtime</b>, the private <code>apiBase</code> is overridable by
+the <code>NUXT_API_BASE</code> env var — Nuxt maps <code>NUXT_*</code> onto <code>runtimeConfig</code>
+automatically. That's the hook Compose uses in step 15.</div>
+
+
+<h2 id="searchpage"><span class="num">12</span> · The search page</h2>
+<p><b>Teach.</b> A Vue <b>Single-File Component</b> has three parts: <code>&lt;script setup&gt;</code>
+(logic), <code>&lt;template&gt;</code> (markup with <code>v-model</code>/<code>v-for</code>/<code>v-if</code>
+directives), and optional <code>&lt;style&gt;</code>. We build the page in two passes: a minimal
+search-and-list, then the full version with filters, "load more" paging, and empty/loading states.</p>
+
+<h3>First — the TypeScript contract</h3>
+<p>Mirror the FastAPI Pydantic models as TS interfaces so <code>data</code> is fully typed end to end.</p>
+<span class="path">frontend/types/api.ts</span>
+<pre><code class="language-ts">// Shapes returned by the FastAPI "search-api" backend.
+
+export interface SearchResult {
+  type: string
+  actor_login: string
+  repo_name: string
+  message: string
+  created_at: string
+  score: number
+}
+
+export interface SearchResponse {
+  total: number
+  results: SearchResult[]
+}
+
+export interface RepoStat {
+  repo: string
+  events: number
+}</code></pre>
+
+<h3>Pass 1 — search + list</h3>
+<p><code>useFetch</code> re-runs whenever a reactive value in <code>query</code> changes;
+<code>immediate:false</code> holds it until the first <code>refresh()</code> (the search click), and
+<code>default</code> keeps <code>data.value</code> from ever being null.</p>
+<span class="path">frontend/pages/index.vue — first pass</span>
+<pre><code class="language-html">&lt;script setup lang="ts"&gt;
+import type { SearchResponse } from '~/types/api'
+
+const q = ref('')
+
+// useFetch calls our Nitro proxy (/api/search), which forwards to FastAPI.
+// The generic types `data` as SearchResponse. immediate:false = wait for a click.
+const { data, pending, refresh } = await useFetch&lt;SearchResponse&gt;('/api/search', {
+  query: { q },
+  immediate: false,
+  default: () =&gt; ({ total: 0, results: [] }),
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div&gt;
+    &lt;h1&gt;Search GitHub events&lt;/h1&gt;
+    &lt;form @submit.prevent="refresh()"&gt;
+      &lt;input v-model="q" placeholder="Search text" /&gt;
+      &lt;button type="submit"&gt;Search&lt;/button&gt;
+    &lt;/form&gt;
+
+    &lt;p v-if="pending"&gt;Loading…&lt;/p&gt;
+    &lt;article v-for="(r, i) in data.results" :key="i"&gt;
+      {{ r.repo_name }} — {{ r.type }} — {{ r.message }}
+    &lt;/article&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+
+<h3>Pass 2 — filters, paging, and states</h3>
+<p><b>Teach.</b> The finished page adds <code>type</code>/<code>actor</code> filters, a "search on click"
+pattern (form values copied into a <code>submitted</code> object so typing doesn't spam the API), an
+accumulating "Load more", and loading/empty/error states. Here it is in full:</p>
+<span class="path">frontend/pages/index.vue</span>
+<pre><code class="language-html">&lt;script setup lang="ts"&gt;
+import type { SearchResponse } from '~/types/api'
+
+// --- form state (what the user types) ---
+const q = ref('')
+const type = ref('')
+const actor = ref('')
+
+// --- query state (what we actually send). We only copy the form values
+// into these when the user clicks Search, so typing doesn't spam the API. ---
+const submitted = reactive({
+  q: '',
+  type: '',
+  actor: '',
+})
+const page = ref(1)
+const size = ref(10)
+
+// Accumulated results across "Load more" pages.
+const results = ref&lt;SearchResponse['results']&gt;([])
+const total = ref(0)
+
+// useFetch re-runs automatically whenever a reactive value used in `query`
+// changes. We type the response via the generic so `data` is fully typed.
+const { pending, error, refresh } = await useFetch&lt;SearchResponse&gt;(
+  '/api/search',
+  {
+    query: {
+      q: () =&gt; submitted.q,
+      type: () =&gt; submitted.type,
+      actor: () =&gt; submitted.actor,
+      page,
+      size,
+    },
+    // Don't fire on first load until the user searches.
+    immediate: false,
+    default: () =&gt; ({ total: 0, results: [] }),
+    // Runs after every fetch. Page 1 resets the list; later pages append.
+    onResponse({ response }) {
+      const body = response._data as SearchResponse
+      total.value = body.total
+      if (page.value === 1) {
+        results.value = body.results
+      } else {
+        results.value = [...results.value, ...body.results]
+      }
+    },
+  },
+)
+
+function onSearch() {
+  submitted.q = q.value
+  submitted.type = type.value
+  submitted.actor = actor.value
+  page.value = 1
+  refresh()
+}
+
+const hasMore = computed(() =&gt; results.value.length &lt; total.value)
+const hasSearched = computed(
+  () =&gt; submitted.q !== '' || submitted.type !== '' || submitted.actor !== '',
+)
+
+function loadMore() {
+  page.value += 1
+}
+
+function truncate(text: string, max = 100): string {
+  if (!text) return ''
+  return text.length &gt; max ? text.slice(0, max) + '…' : text
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div&gt;
+    &lt;h1&gt;Search GitHub events&lt;/h1&gt;
+
+    &lt;form class="filters" @submit.prevent="onSearch"&gt;
+      &lt;input
+        v-model="q"
+        class="grow"
+        type="text"
+        placeholder="Search text (q)"
+      /&gt;
+      &lt;input v-model="type" type="text" placeholder="type (e.g. PushEvent)" /&gt;
+      &lt;input v-model="actor" type="text" placeholder="actor login" /&gt;
+      &lt;button type="submit" :disabled="pending"&gt;Search&lt;/button&gt;
+    &lt;/form&gt;
+
+    &lt;p v-if="hasSearched" class="muted"&gt;{{ total }} result(s)&lt;/p&gt;
+
+    &lt;p v-if="pending" class="center muted"&gt;Loading…&lt;/p&gt;
+
+    &lt;p v-else-if="error" class="center muted"&gt;
+      Something went wrong loading results.
+    &lt;/p&gt;
+
+    &lt;p v-else-if="hasSearched &amp;&amp; results.length === 0" class="center muted"&gt;
+      No events matched your search.
+    &lt;/p&gt;
+
+    &lt;div v-else&gt;
+      &lt;article v-for="(r, i) in results" :key="i" class="card"&gt;
+        &lt;div class="row1"&gt;
+          &lt;span class="repo"&gt;{{ r.repo_name }}&lt;/span&gt;
+          &lt;span class="badge"&gt;{{ r.type }}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;p class="msg"&gt;{{ truncate(r.message) }}&lt;/p&gt;
+        &lt;div class="meta"&gt;
+          &lt;span&gt;@{{ r.actor_login }}&lt;/span&gt;
+          &lt;span&gt;{{ formatDate(r.created_at) }}&lt;/span&gt;
+          &lt;span&gt;score {{ r.score.toFixed(2) }}&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/article&gt;
+
+      &lt;div v-if="hasMore" class="center"&gt;
+        &lt;button type="button" :disabled="pending" @click="loadMore"&gt;
+          Load more
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+<div class="note why"><span class="tag">Why copy into <code>submitted</code>?</span>
+If <code>useFetch</code>'s <code>query</code> pointed straight at the input refs, every keystroke would
+fire a request. Instead the inputs bind to <code>q</code>/<code>type</code>/<code>actor</code>, and only
+<code>onSearch()</code> copies them into the reactive <code>submitted</code> object the query watches —
+so the API is hit on <b>Search</b>, and on <b>Load more</b> (which just bumps <code>page</code>).</div>
+<div class="note gotcha"><span class="tag">Gotcha — typing <code>useFetch</code></span>
+Pass the response type as the generic (<code>useFetch&lt;SearchResponse&gt;(…)</code>) so
+<code>data</code> is typed, and always give a <code>default</code> so the template never dereferences
+<code>null</code> during loading or SSR.</div>
+
+<div class="rep"><b>Your Rep:</b> the score is shown but you can't sort by recency. Add a "Newest / Relevant"
+toggle that appends a <code>sort</code> param the proxy forwards, and have FastAPI honor it (relevance is
+already <code>_score</code>; "newest" is <code>created_at desc</code> only). Small full-stack change
+touching the page, the proxy, and the endpoint — exactly the muscle this project builds.</div>
+<details><summary>Hint — where each change lands <span class="kind">approach</span></summary>
+<div class="body">
+<ul class="clean">
+  <li><b>page:</b> a <code>ref&lt;'relevant'|'newest'&gt;</code> added to <code>submitted</code> and the fetch <code>query</code>.</li>
+  <li><b>proxy:</b> nothing — <code>getQuery(event)</code> already forwards every param.</li>
+  <li><b>FastAPI:</b> a <code>sort: str = "relevant"</code> param; when <code>"newest"</code>, set
+    <code>sort=[{"created_at": "desc"}]</code> instead of the <code>_score</code>-first list.</li>
+</ul>
+<div class="note why"><span class="tag">The lesson</span>
+One user-facing feature, three layers, one shared contract. That's the day-to-day of full-stack work,
+and why the TS types mirroring the Pydantic models pays off — change the shape in one place, the compiler
+finds the other.</div>
+</div></details>
+
+
+<h2 id="statspage"><span class="num">13</span> · The stats page</h2>
+<p><b>Teach.</b> Simpler than search — fetch on load (no <code>immediate:false</code>), then render the
+top repos as CSS bars whose width is proportional to the event count. No chart library.</p>
+<span class="path">frontend/pages/stats.vue</span>
+<pre><code class="language-html">&lt;script setup lang="ts"&gt;
+import type { RepoStat } from '~/types/api'
+
+// Simple fetch on page load. useFetch handles SSR + typing for us.
+const { data, pending, error } = await useFetch&lt;RepoStat[]&gt;('/api/stats', {
+  default: () =&gt; [],
+})
+
+// Biggest event count -&gt; used to scale the bar widths (0..100%).
+const maxEvents = computed(() =&gt; {
+  const rows = data.value ?? []
+  return rows.reduce((m, r) =&gt; Math.max(m, r.events), 0)
+})
+
+function widthPct(events: number): string {
+  if (maxEvents.value === 0) return '0%'
+  return `${Math.round((events / maxEvents.value) * 100)}%`
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div&gt;
+    &lt;h1&gt;Top repositories&lt;/h1&gt;
+
+    &lt;p v-if="pending" class="center muted"&gt;Loading…&lt;/p&gt;
+
+    &lt;p v-else-if="error" class="center muted"&gt;Could not load stats.&lt;/p&gt;
+
+    &lt;p v-else-if="!data || data.length === 0" class="center muted"&gt;
+      No stats yet.
+    &lt;/p&gt;
+
+    &lt;div v-else&gt;
+      &lt;div v-for="row in data" :key="row.repo" class="bar-row"&gt;
+        &lt;div class="bar-label"&gt;
+          &lt;span class="repo"&gt;{{ row.repo }}&lt;/span&gt;
+          &lt;span class="muted"&gt;{{ row.events }}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class="bar-track"&gt;
+          &lt;div class="bar-fill" :style="{ width: widthPct(row.events) }" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+<p>And the shell that ties the two pages together with a nav:</p>
+<span class="path">frontend/app.vue</span>
+<pre><code class="language-html">&lt;template&gt;
+  &lt;div&gt;
+    &lt;nav class="nav"&gt;
+      &lt;span class="brand"&gt;GH Events&lt;/span&gt;
+      &lt;NuxtLink to="/" class="link"&gt;Search&lt;/NuxtLink&gt;
+      &lt;NuxtLink to="/stats" class="link"&gt;Stats&lt;/NuxtLink&gt;
+    &lt;/nav&gt;
+
+    &lt;main class="container"&gt;
+      &lt;NuxtPage /&gt;
+    &lt;/main&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+<details><summary>The stylesheet (grab it, it's not the lesson) <span class="kind">css</span></summary>
+<div class="body">
+<span class="path">frontend/assets/css/main.css</span>
+<pre><code class="language-css">:root {
+  --bg: #0f1117;
+  --panel: #171a23;
+  --border: #262b38;
+  --text: #e6e8ee;
+  --muted: #9aa2b1;
+  --accent: #4f9cf9;
+  --accent-dim: #2a507f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.nav .brand {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.nav a.link {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.nav a.router-link-active {
+  color: var(--accent);
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+input {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-dim);
+}
+
+button {
+  background: var(--accent);
+  color: #06101f;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filters .grow {
+  flex: 1 1 200px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.card .row1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.repo {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 12px;
+  background: var(--accent-dim);
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.msg {
+  margin: 6px 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.center {
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* Stats bar list */
+.bar-row {
+  margin-bottom: 10px;
+}
+
+.bar-row .bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.bar-track {
+  background: var(--border);
+  border-radius: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+}</code></pre>
+</div></details>
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Why does the stats page omit <code>immediate:false</code> but the search page needs it?</li>
+  <li>What are the three sections of a Vue SFC, and what goes in each?</li>
+  <li>Where does the browser's request actually go when the page calls <code>/api/stats</code>?</li>
+</ol></div>
+
+
+<h2 id="run-full"><span class="num">14</span> · Run the whole thing locally</h2>
+<p><b>Teach.</b> Three processes, three terminals: Elasticsearch (from P1's Compose), the FastAPI service,
+and the Nuxt dev server. Then open the UI and watch a query flow browser → Nitro proxy → FastAPI → ES and
+back.</p>
+<div class="task"><b>Build along:</b> bring all three up and search from the browser.</div>
+<details><summary>Solution — the three processes <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash"># Terminal 1 — ES from P1 (and make sure it has data; see step 1)
+cd gh-events &amp;&amp; docker compose up -d db search
+
+# Terminal 2 — the FastAPI search service
+cd search-api &amp;&amp; uv run uvicorn app.main:app --reload --port 8001
+
+# Terminal 3 — the Nuxt dev server (proxies to :8001 by default)
+cd frontend &amp;&amp; npm run dev
+# -&gt; Nuxt ready at http://localhost:3000
+
+# Open it and search:
+open http://localhost:3000</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — nothing showing up?</span>
+Walk the chain: is ES populated (<code>curl localhost:9200/github-events/_count</code>)? Is FastAPI up
+(<code>curl localhost:8001/health</code>)? Does the proxy reach it (<code>curl
+localhost:3000/api/stats</code>)? Whichever link is empty/500 is your culprit — the same layered-debugging
+habit you'll lean on hard in Kubernetes.</div>
+</div></details>
+
+
+<h2 id="compose"><span class="num">15</span> · The full stack in Compose</h2>
+<p><b>Teach.</b> Finally, fold both new services into Project 1's <code>docker-compose.yml</code> so one
+<code>docker compose up</code> brings the entire platform online. Inside the Compose network, services
+address each other by name — FastAPI reaches ES at <code>search:9200</code>, and Nuxt reaches FastAPI at
+<code>search-api:8001</code>.</p>
+
+<h3>Step 1 — a Dockerfile for Nuxt</h3>
+<p>A two-stage build: compile with the full toolchain, then ship only the tiny <code>.output/</code> on a
+clean Node image.</p>
+<span class="path">frontend/Dockerfile</span>
+<pre><code class="language-docker"># --- build stage ---
+FROM node:22-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build          # produces .output/
+
+# --- runtime stage (small, no dev deps) ---
+FROM node:22-slim
+WORKDIR /app
+COPY --from=build /app/.output ./.output
+ENV HOST=0.0.0.0 PORT=3000
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]</code></pre>
+<span class="path">frontend/.dockerignore</span>
+<pre><code class="language-text">node_modules/
+.nuxt/
+.output/
+.git/</code></pre>
+
+<h3>Step 2 — extend the Compose file</h3>
+<span class="path">docker-compose.yml — the two new services (project layout: db, search, web from P1, plus these)</span>
+<pre><code class="language-yaml">  # --- add these two services to Project 1's docker-compose.yml ---
+
+  search-api:
+    build: ./search-api
+    environment:
+      ES_URL: http://search:9200      # the ES service name from P1
+    ports:
+      - "8001:8001"
+    depends_on:
+      - search
+
+  frontend:
+    build: ./frontend
+    environment:
+      # NUXT_ prefix -&gt; overrides runtimeConfig.apiBase at runtime
+      NUXT_API_BASE: http://search-api:8001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - search-api</code></pre>
+<details><summary>Solution — bring the whole platform up <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">export GITHUB_TOKEN=ghp_your_token_here    # frontend build doesn't need it; ingest does
+docker compose up -d --build
+
+# seed data through P1's Django (once ES is up)
+docker compose exec web python manage.py ingest_events
+docker compose exec web python manage.py reindex
+
+# open the UI — served entirely from containers now
+open http://localhost:3000
+# FastAPI docs still reachable directly:
+open http://localhost:8001/docs</code></pre>
+<div class="note gotcha"><span class="tag">Gotcha — <code>NUXT_API_BASE</code>, not <code>API_BASE</code>, at runtime</span>
+The Dockerfile baked in whatever <code>process.env.API_BASE</code> was at <i>build</i> time (probably the
+localhost default). To point the running container at the <code>search-api</code> service you override
+<code>runtimeConfig.apiBase</code> at <i>run</i> time — and Nuxt only maps the <code>NUXT_</code>-prefixed
+env var onto runtimeConfig. That's why the Compose env is <code>NUXT_API_BASE</code>.</div>
+<div class="note why"><span class="tag">Why service names again</span>
+Same lesson as P1: <code>localhost</code> inside the <code>frontend</code> container is the container
+itself. The FastAPI service lives at hostname <code>search-api</code>, ES at <code>search</code>. Get the
+env wiring right and the same images will run unchanged in Kubernetes next project.</div>
+</div></details>
+<div class="recall"><b>Recall check</b>
+<ol>
+  <li>Inside Compose, what hostname does the frontend use to reach FastAPI, and why not <code>localhost</code>?</li>
+  <li>Why does the Nuxt Dockerfile have two stages?</li>
+  <li>Why <code>NUXT_API_BASE</code> rather than setting <code>API_BASE</code> in Compose?</li>
+</ol></div>
+
+
+<h2 id="recap"><span class="num">16</span> · Recap &amp; what's next</h2>
+<p>You now have a full-stack, polyglot platform — and, importantly, code you <b>ran</b>, not just read.
+Be able to explain each piece:</p>
+<ul class="clean">
+  <li><b>FastAPI:</b> async endpoints, Pydantic response models, auto OpenAPI docs, querying ES with the v8 client, and testing it with a monkeypatched client — no cluster required.</li>
+  <li><b>Nuxt/Vue:</b> SFCs (<code>script setup</code> + template directives), <code>useFetch</code> with typed generics, file-based pages, and a Nitro <b>server proxy</b> that kills CORS and hides the backend URL.</li>
+  <li><b>Architecture:</b> Django owns writes/ingest, FastAPI owns reads/search, Nuxt is the UI — three services over the shared P1 data stores.</li>
+  <li><b>Compose:</b> five services now, service-name networking, runtime config via <code>NUXT_*</code> env.</li>
+</ul>
+<h3>Extensions</h3>
+<ul class="clean">
+  <li>Add an <b>event detail page</b> (<code>pages/events/[id].vue</code>) backed by the <code>/event/&lt;id&gt;</code> route you already built.</li>
+  <li>Add <b>date-range</b> filtering to search (a <code>range</code> query) with two date inputs.</li>
+  <li>Show a <b>live-updating</b> stats page (poll <code>/api/stats</code> every few seconds).</li>
+  <li>Add a <code>/ready</code> endpoint to FastAPI that pings ES — you'll wire it to a K8s readiness probe next.</li>
+  <li>Write one Nuxt component test (Vitest) to match the FastAPI test discipline.</li>
+</ul>
+<div class="note why"><span class="tag">What Project 3 does with this</span>
+Two of your services now touch Elasticsearch, and one of them (Django) still does that risky synchronous
+indexing from P1. Project 3 puts <b>Kafka</b> between them and moves everything onto <b>Kubernetes</b>:
+Django produces a <b>CloudEvent</b>, a consumer indexes into ES, FastAPI keeps serving reads, and Nuxt
+keeps serving the UI — now as five Deployments with CKAD/CKA drills baked in. The full-stack shape you
+just built is exactly what gets orchestrated.</div>
+<details><summary>Teardown <span class="kind">commands</span></summary>
+<div class="body">
+<pre><code class="language-bash">docker compose down          # stop everything, keep the pgdata volume
+docker compose down -v       # ...and wipe the data volume too</code></pre>
+</div></details>
+
+<footer>
+  Project 2 of the event-driven platform series · Nuxt · Vue · FastAPI · Elasticsearch · Docker.<br>
+  Every snippet was generated from a service that boots — FastAPI tests pass, Nuxt builds clean.
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  try { if (window.hljs) hljs.highlightAll(); } catch (e) {}
+
+  const all = () => document.querySelectorAll("details");
+  document.getElementById("expandAll").onclick = () => all().forEach(d => d.open = true);
+  document.getElementById("collapseAll").onclick = () => all().forEach(d => d.open = false);
+
+  document.querySelectorAll("pre").forEach((pre) => {
+    const btn = document.createElement("button");
+    btn.className = "copy-btn";
+    btn.type = "button";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", () => {
+      const code = pre.querySelector("code") || pre;
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = "Copied";
+        btn.classList.add("done");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>

@@ -125,9 +125,10 @@
   finished dumps — you see each piece earn its place.</p>
   <div class="series">
     <span class="p here"><b>1 ▸</b> Django · ES · Docker</span>
-    <span class="p">2 ▸ Kafka · Kubernetes</span>
-    <span class="p">3 ▸ Argo Workflows · Events</span>
-    <span class="p">4 ▸ Argo CD · Capstone</span>
+    <span class="p">2 ▸ Nuxt · FastAPI</span>
+    <span class="p">3 ▸ Kafka · Kubernetes</span>
+    <span class="p">4 ▸ Argo Workflows · Events</span>
+    <span class="p">5 ▸ Argo CD · Helm</span>
   </div>
 </header>
 
@@ -185,8 +186,8 @@ Elasticsearch, and expose a search API. No fake data, ever — that's a hard rul
 Postgres is your <b>system of record</b> — durable, relational, the truth. Elasticsearch is a
 <b>search index</b> — it trades some durability guarantees for blazing full-text queries, ranking, and
 aggregations that would be painful in SQL. Mirroring Postgres → ES is a pattern you'll meet everywhere.
-In Project 2 the mirror stops being a direct call and becomes a <b>Kafka</b> pipeline — this project is
-where you feel <i>why</i> you'd want that.</div>
+In Project 3 the mirror stops being a direct call and becomes a <b>Kafka</b> pipeline — this project is
+where you feel <i>why</i> you'd want that. (Project 2 first gives the platform a UI.)</div>
 
 <ul class="clean">
   <li><b>Django + DRF</b> — models, migrations, serializers, viewsets, routing. The API core.</li>
@@ -646,7 +647,7 @@ class Command(BaseCommand):
 <div class="note why"><span class="tag">Why poll on an interval</span>
 GitHub's <code>/events</code> is a <i>sliding window</i> of recent activity, not a queryable archive.
 Poll every ~15s and you accumulate a real, growing dataset. This manual loop is deliberately crude —
-in Project 2 you'll hand this job to a proper Kafka producer/consumer and never poll from a web request
+in Project 3 you'll hand this job to a proper Kafka producer/consumer and never poll from a web request
 again. Feeling the crudeness now is the point.</div>
 </div></details>
 
@@ -824,7 +825,7 @@ at the end of your ingest loop so new events are searchable the moment they're s
 <div class="note gotcha"><span class="tag">Gotcha — the coupling you just created</span>
 Now every ingest does a synchronous ES write inline. If ES is slow or down, ingestion stalls or errors.
 That tight coupling between "save to Postgres" and "index in ES" is the <b>exact problem</b> Kafka solves
-in Project 2: the producer just emits an event and moves on; a separate consumer indexes at its own pace.
+in Project 3: the producer just emits an event and moves on; a separate consumer indexes at its own pace.
 Keep this coupling in mind — it's the cliffhanger.</div>
 </div></details>
 
@@ -1093,12 +1094,14 @@ your own words — that recall <i>is</i> the deliverable:</p>
   <li>Write one test: ingest a canned event fixture, reindex, assert search finds it.</li>
 </ul>
 
-<div class="note why"><span class="tag">The cliffhanger → Project 2</span>
+<div class="note why"><span class="tag">The cliffhanger → Project 3</span>
 You planted two deliberate pain points: ingestion <b>polls</b> from a loop, and each save does a
 <b>synchronous</b> ES write inline. Both couple things that shouldn't be coupled — if ES hiccups,
-ingestion suffers. Project 2 fixes exactly this: Django <i>produces</i> a <b>CloudEvent</b> to <b>Kafka</b>
-and returns; a separate <b>consumer</b> indexes into ES at its own pace; and the whole thing runs on
-<b>Kubernetes</b> (with CKAD/CKA drills baked in) instead of Compose. Same app, real decoupling.</div>
+ingestion suffers. <b>Project 2</b> first gives the platform a face — a FastAPI search service and a Nuxt
+UI on top of this data. Then <b>Project 3</b> fixes the coupling: Django <i>produces</i> a
+<b>CloudEvent</b> to <b>Kafka</b> and returns; a separate <b>consumer</b> indexes into ES at its own pace;
+and the whole thing runs on <b>Kubernetes</b> (with CKAD/CKA drills baked in) instead of Compose. Same
+app, real decoupling.</div>
 
 <details><summary>Teardown <span class="kind">commands</span></summary>
 <div class="body">
