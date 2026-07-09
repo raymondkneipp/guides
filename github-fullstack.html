@@ -98,7 +98,18 @@
   .series .p{background:var(--panel);border:1px solid var(--border);border-radius:8px;
     padding:8px 12px;color:var(--muted)}
   .series .p.here{border-color:var(--accent);color:var(--text)}
+  .series a.p{text-decoration:none;color:var(--muted)}
+  .series a.p:hover{border-color:var(--accent);color:var(--text)}
+  .series .p.soon{opacity:.5}
   .series .p b{color:var(--accent)}
+  .backlink{display:inline-block;color:var(--muted);text-decoration:none;font-size:13px;margin:0 0 4px}
+  .backlink:hover{color:var(--accent)}
+  .pagenav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:36px 0 0}
+  .pagenav a,.pagenav span{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 16px;text-decoration:none;color:var(--text);font-size:14px;max-width:48%}
+  .pagenav a:hover{border-color:var(--accent)}
+  .pagenav .dim{color:var(--muted);opacity:.6}
+  .pagenav .lbl{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
     color:var(--muted);font-size:13px}
   kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;
@@ -107,6 +118,8 @@
 </head>
 <body>
 <div class="wrap">
+
+<a class="backlink" href="./index.html">← All guides</a>
 
 <header class="hero">
   <h1>Full-Stack GitHub Events Explorer
@@ -125,11 +138,11 @@
   the FastAPI app passes its tests and serves <code>/docs</code>; the Nuxt app passes
   <code>npm run build</code>.</p>
   <div class="series">
-    <span class="p"><b>1 ✓</b> Django · ES · Docker</span>
+    <a class="p" href="./github-events.html"><b>1 ✓</b> Django · ES · Docker</a>
     <span class="p here"><b>2 ▸</b> Nuxt · FastAPI</span>
-    <span class="p">3 ▸ Kafka · Kubernetes</span>
-    <span class="p">4 ▸ Argo Workflows · Events</span>
-    <span class="p">5 ▸ Argo CD · Helm</span>
+    <span class="p soon">3 ▸ Kafka · Kubernetes</span>
+    <span class="p soon">4 ▸ Argo Workflows · Events</span>
+    <span class="p soon">5 ▸ Argo CD · Helm</span>
   </div>
 </header>
 
@@ -1521,6 +1534,11 @@ just built is exactly what gets orchestrated.</div>
 <pre><code class="language-bash">docker compose down          # stop everything, keep the pgdata volume
 docker compose down -v       # ...and wipe the data volume too</code></pre>
 </div></details>
+
+<nav class="pagenav">
+  <a href="./github-events.html"><span class="lbl">← Prev · Project 1</span>Searchable GitHub Events</a>
+  <span class="dim"><span class="lbl">Next · Project 3</span>Kafka · Kubernetes (coming soon)</span>
+</nav>
 
 <footer>
   Project 2 of the event-driven platform series · Nuxt · Vue · FastAPI · Elasticsearch · Docker.<br>

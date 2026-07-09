@@ -98,7 +98,18 @@
   .series .p{background:var(--panel);border:1px solid var(--border);border-radius:8px;
     padding:8px 12px;color:var(--muted)}
   .series .p.here{border-color:var(--accent);color:var(--text)}
+  .series a.p{text-decoration:none;color:var(--muted)}
+  .series a.p:hover{border-color:var(--accent);color:var(--text)}
+  .series .p.soon{opacity:.5}
   .series .p b{color:var(--accent)}
+  .backlink{display:inline-block;color:var(--muted);text-decoration:none;font-size:13px;margin:0 0 4px}
+  .backlink:hover{color:var(--accent)}
+  .pagenav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:36px 0 0}
+  .pagenav a,.pagenav span{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 16px;text-decoration:none;color:var(--text);font-size:14px;max-width:48%}
+  .pagenav a:hover{border-color:var(--accent)}
+  .pagenav .dim{color:var(--muted);opacity:.6}
+  .pagenav .lbl{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
     color:var(--muted);font-size:13px}
   kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;
@@ -107,6 +118,8 @@
 </head>
 <body>
 <div class="wrap">
+
+<a class="backlink" href="./index.html">← All guides</a>
 
 <header class="hero">
   <h1>Searchable GitHub Events
@@ -125,10 +138,10 @@
   finished dumps — you see each piece earn its place.</p>
   <div class="series">
     <span class="p here"><b>1 ▸</b> Django · ES · Docker</span>
-    <span class="p">2 ▸ Nuxt · FastAPI</span>
-    <span class="p">3 ▸ Kafka · Kubernetes</span>
-    <span class="p">4 ▸ Argo Workflows · Events</span>
-    <span class="p">5 ▸ Argo CD · Helm</span>
+    <a class="p" href="./github-fullstack.html"><b>2 ▸</b> Nuxt · FastAPI</a>
+    <span class="p soon">3 ▸ Kafka · Kubernetes</span>
+    <span class="p soon">4 ▸ Argo Workflows · Events</span>
+    <span class="p soon">5 ▸ Argo CD · Helm</span>
   </div>
 </header>
 
@@ -1111,6 +1124,11 @@ docker compose down
 # Nuke everything including the data volume
 docker compose down -v</code></pre>
 </div></details>
+
+<nav class="pagenav">
+  <a class="dim" href="./index.html"><span class="lbl">Index</span>← All guides</a>
+  <a href="./github-fullstack.html"><span class="lbl">Next · Project 2</span>Full-Stack Explorer (Nuxt · FastAPI) →</a>
+</nav>
 
 <footer>
   Project 1 of the event-driven platform series · Django · DRF · PostgreSQL · Elasticsearch · Docker.<br>
