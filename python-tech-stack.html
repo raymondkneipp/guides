@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide · Python Backend Tech Stack Options</title>
+<style>
+  :root { --bg:#0b0f17; --panel:#141a24; --line:#242e3d; --fg:#e7edf5; --dim:#93a1b5; --accent:#5b9dff; --green:#3ecf8e; --amber:#f0b429; --code:#0e141f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:32px 20px 96px; }
+  h1 { font-size:28px; line-height:1.2; margin:0 0 6px; }
+  h2 { font-size:21px; margin:38px 0 12px; padding-top:14px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:24px 0 8px; color:var(--accent); }
+  p, li { color:#d6deea; }
+  .lede { color:var(--dim); font-size:16px; margin-top:0; }
+  code { background:var(--code); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cde3ff; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:12px 0; }
+  pre code { background:none; border:0; padding:0; color:#dbe7f5; display:block; white-space:pre; }
+  .tok-c { color:#6b7a8f; font-style:italic; }
+  .note { border-left:3px solid var(--accent); background:#111a28; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .rule { border-left:3px solid var(--amber); background:#1b1710; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .ok { border-left:3px solid var(--green); background:#0f1a15; border-radius:0 8px 8px 0; padding:10px 14px; margin:14px 0; }
+  .toc { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:20px 0; }
+  .toc ol { margin:6px 0 0; padding-left:20px; }
+  .toc a { color:var(--accent); text-decoration:none; }
+  .toc a:hover { text-decoration:underline; }
+  .pros { color:var(--green); font-weight:600; }
+  .cons { color:var(--amber); font-weight:600; }
+  table { border-collapse:collapse; width:100%; margin:14px 0; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:#fff; }
+  td { color:#d6deea; }
+  b, strong { color:#fff; }
+  a { color:var(--accent); }
+  hr { border:0; border-top:1px solid var(--line); margin:32px 0; }
+  .foot { color:var(--dim); font-size:13px; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Python Backend Tech Stack Options</h1>
+<p class="lede">A decision doc for a team migrating off Django. Web-framework choices (Django vs FastAPI vs Litestar) and ORM choices (SQLAlchemy 2.0, SQLModel, Tortoise, Piccolo) — pros, cons, code, and a recommendation. Last reviewed July 2026.</p>
+
+<div class="toc">
+  <b>TL;DR</b>
+  <ol>
+    <li><b>Framework:</b> FastAPI is a solid move <i>if</i> you're API-first and benefit from async. If it's CRUD + admin heavy, don't dismiss staying on Django 5.x.</li>
+    <li><b>ORM — safe default:</b> SQLAlchemy 2.0 + Alembic. Boring, and boring is a feature.</li>
+    <li><b>ORM — best DX with FastAPI:</b> SQLModel (same author as FastAPI).</li>
+    <li><b>ORM — familiar for Django refugees:</b> Tortoise ORM.</li>
+    <li><b>ORM — type-safety &amp; speed, small ecosystem OK:</b> Piccolo.</li>
+  </ol>
+</div>
+
+<div class="rule"><b>Biggest hidden cost of leaving Django:</b> you don't just swap a framework — you give up the admin, auth, ORM, and migration tooling as one integrated whole, and re-assemble them from independent packages.</div>
+
+<h2 id="framework">1. Web Framework</h2>
+
+<h3>Django (the incumbent)</h3>
+<p>Batteries-included, convention-driven, sync-first with a maturing async story (Django 5.x has async views, middleware, and an async ORM API).</p>
+<p><span class="pros">Pros:</span> everything in one box (ORM, migrations, admin, auth, forms, sessions, CSRF); the <b>admin site</b> alone is worth thousands of dollars of build time; enormous ecosystem and hiring pool; great for server-rendered apps, internal tools, and structured SaaS.</p>
+<p><span class="cons">Cons:</span> the ORM is fundamentally <b>sync</b> — async views help with external I/O, but DB-bound workloads don't get the full async win; heavier and more opinionated; not API-first (DRF bolts on REST but feels dated next to Pydantic + auto OpenAPI).</p>
+<div class="note"><b>Choose Django when:</b> the product is CRUD + admin heavy, you want conventions over configuration, and raw async throughput isn't the bottleneck.</div>
+
+<h3>FastAPI (what the team is considering)</h3>
+<p>Async-first, built on Starlette + Pydantic. Type hints drive validation, serialization, dependency injection, and automatic OpenAPI/Swagger docs.</p>
+<p><span class="pros">Pros:</span> <b>async-native</b> — one worker juggles many concurrent I/O-bound requests; <b>Pydantic</b> validation and <b>auto-generated docs</b> are best-in-class; lightweight and fast; natural fit for microservices, AI/RAG backends, and high-throughput data APIs; type hints give real editor/mypy support end-to-end.</p>
+<p><span class="cons">Cons:</span> <b>not batteries-included</b> — no ORM, migrations, admin, or auth; you pick and wire each one; more architectural decisions land on the team, which can fragment large codebases without strong internal conventions; background tasks and async correctness are your problem to get right.</p>
+<div class="note"><b>Choose FastAPI when:</b> you're API-first, want async, and are comfortable assembling your own stack (ORM + Alembic + auth + admin).</div>
+
+<h3>Litestar (the dark-horse alternative)</h3>
+<p>An async framework in the FastAPI mold, but <b>more batteries-included</b> — layered dependency injection, patterns for larger apps, first-class SQLAlchemy integration, less assemble-it-yourself. Smaller community than FastAPI. If the team's worry about FastAPI is "too unstructured for a big app," Litestar is the natural thing to evaluate.</p>
+
+<div class="ok"><b>Framework verdict:</b> a common, honest 2026 pattern is <b>hybrid</b> — keep Django where structure + admin matter, use FastAPI for async-heavy or high-performance services. You don't have to pick one religion for the whole org.</div>
+
+<h2 id="orms">2. ORM Options</h2>
+<p>All snippets model the same tiny domain: a <code>Team</code> with many <code>Hero</code>s.</p>
+
+<h3>SQLAlchemy 2.0 — the powerhouse (safe default)</h3>
+<p>The industry standard. Core + ORM, sync <b>and</b> async, every dialect, and <b>Alembic</b> — the best migration tool in the ecosystem.</p>
+<pre><code>from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+class Base(DeclarativeBase):
+    pass
+
+class Team(Base):
+    __tablename__ = "team"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    heroes: Mapped[list["Hero"]] = relationship(back_populates="team")
+
+class Hero(Base):
+    __tablename__ = "hero"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    team_id: Mapped[int] = mapped_column(ForeignKey("team.id"))
+    team: Mapped["Team"] = relationship(back_populates="heroes")
+
+<span class="tok-c"># Async query</span>
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+async def heroes_on(session: AsyncSession, team_name: str):
+    stmt = select(Hero).join(Team).where(Team.name == team_name)
+    result = await session.execute(stmt)
+    return result.scalars().all()</code></pre>
+<p><span class="pros">Pros:</span> unmatched maturity, migrations, community, escape hatches; async-native; handles any query you can dream up. <span class="cons">Cons:</span> steepest learning curve; verbose; not Pydantic-aware, so you hand-write request/response schemas separately from your DB models.</p>
+
+<h3>SQLModel — SQLAlchemy + Pydantic, by the FastAPI author</h3>
+<p>A thin layer that makes one class serve as both the Pydantic schema and the SQLAlchemy model. Actively maintained (0.0.x line, tracking SQLAlchemy 2.0).</p>
+<pre><code>from sqlmodel import Field, Relationship, SQLModel
+
+class Team(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    heroes: list["Hero"] = Relationship(back_populates="team")
+
+class Hero(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    team_id: int | None = Field(default=None, foreign_key="team.id")
+    team: Team | None = Relationship(back_populates="heroes")
+
+<span class="tok-c"># The same model doubles as the FastAPI response schema:</span>
+from sqlmodel import select
+
+async def heroes_on(session, team_name: str):
+    stmt = select(Hero).join(Team).where(Team.name == team_name)
+    result = await session.exec(stmt)
+    return result.all()</code></pre>
+<p><span class="pros">Pros:</span> least boilerplate with FastAPI (one model, not three); great type hints; you're really on SQLAlchemy underneath, so no lock-in. <span class="cons">Cons:</span> still <code>0.0.x</code> and development has been stop-start; <b>no async wrappers</b> — you import <code>AsyncSession</code>/<code>AsyncEngine</code> straight from SQLAlchemy; for complex queries you drop to raw SQLAlchemy anyway (so you must know both).</p>
+
+<h3>Tortoise ORM — the Django-familiar async ORM</h3>
+<p>Async-native with an API that deliberately mirrors the Django ORM. <b>This is the one that will feel like home for your team.</b> Uses <b>Aerich</b> for migrations.</p>
+<pre><code>from tortoise import fields
+from tortoise.models import Model
+
+class Team(Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=50)
+
+class Hero(Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=50)
+    team = fields.ForeignKeyField("models.Team", related_name="heroes")
+
+<span class="tok-c"># Django-esque query API:</span>
+async def heroes_on(team_name: str):
+    return await Hero.filter(team__name=team_name)</code></pre>
+<p><span class="pros">Pros:</span> gentle on-ramp for Django devs; genuinely async; solid write performance (benchmarks put p50 latency ~a third faster than SQLAlchemy); built-in Pydantic serialization via <code>pydantic_model_creator</code>. <span class="cons">Cons:</span> <b>Aerich migrations are noticeably less mature than Alembic</b> (the most common production complaint); smaller ecosystem and maintainer bandwidth; fewer battle-tested large deployments.</p>
+
+<h3>Piccolo — type-safe, fast, batteries-ish</h3>
+<p>Async-native with its own query builder, <b>first-class static typing</b> (mypy/Pyright), built-in <b>migrations</b>, an <b>admin</b> UI, and an auth app.</p>
+<pre><code>from piccolo.columns import ForeignKey, Varchar
+from piccolo.table import Table
+
+class Team(Table):
+    name = Varchar(length=50)
+
+class Hero(Table):
+    name = Varchar(length=50)
+    team = ForeignKey(references=Team)
+
+<span class="tok-c"># Query builder returns awaitables:</span>
+async def heroes_on(team_name: str):
+    return await Hero.objects().where(Hero.team.name == team_name)</code></pre>
+<p><span class="pros">Pros:</span> <b>fastest simple reads</b> in recent benchmarks (~40% faster than SQLAlchemy at p50); excellent type safety; ships its own admin + migrations + auth, which softens the "leaving Django" pain; low memory / cold-start. <span class="cons">Cons:</span> community is <b>~50× smaller</b> than SQLAlchemy's; sparse public production case studies; <b>no MySQL</b> (Postgres/SQLite only); you're betting on a smaller project staying maintained.</p>
+
+<h3>Honorable mentions</h3>
+<ul>
+  <li><b>Django ORM (standalone):</b> usable without the rest of Django. If the ORM is what you love about Django, this is underrated.</li>
+  <li><b>Peewee:</b> tiny, simple, sync-only. Great for small services, wrong for an async FastAPI push.</li>
+  <li><b>Prisma Client Python:</b> nice DX on paper, but <b>maintenance has been shaky</b> — caution for anything long-lived.</li>
+  <li><b>Encode-style async ORMs (Ormar / others):</b> Pydantic-friendly wrappers over SQLAlchemy Core; check maintenance status before committing.</li>
+</ul>
+
+<h2 id="migrations">3. Migrations (often the deciding factor)</h2>
+<p>Migrations, not query syntax, are where teams get burned.</p>
+<table>
+  <tr><th>Tool</th><th>Used by</th><th>Maturity</th><th>Notes</th></tr>
+  <tr><td><b>Alembic</b></td><td>SQLAlchemy, SQLModel</td><td>Excellent</td><td>Autogenerate, branching, data migrations. The gold standard.</td></tr>
+  <tr><td><b>Django migrations</b></td><td>Django</td><td>Excellent</td><td>Deeply integrated, very reliable.</td></tr>
+  <tr><td><b>Piccolo migrations</b></td><td>Piccolo</td><td>Good</td><td>Built-in, decent autogenerate, smaller track record.</td></tr>
+  <tr><td><b>Aerich</b></td><td>Tortoise</td><td>Fair</td><td>Works, but rough edges; the top Tortoise complaint.</td></tr>
+</table>
+<div class="rule">If long-term schema evolution scares you (it should), that alone pushes toward the <b>SQLAlchemy/SQLModel + Alembic</b> camp.</div>
+
+<h2 id="matrix">4. Decision Matrix</h2>
+<table>
+  <tr><th>Priority</th><th>Best pick</th><th>Runner-up</th></tr>
+  <tr><td>Safest, most future-proof</td><td>SQLAlchemy 2.0</td><td>SQLModel</td></tr>
+  <tr><td>Best DX with FastAPI</td><td>SQLModel</td><td>Piccolo</td></tr>
+  <tr><td>Familiar for Django team</td><td>Tortoise</td><td>Django ORM standalone</td></tr>
+  <tr><td>Raw read performance</td><td>Piccolo</td><td>Tortoise</td></tr>
+  <tr><td>Best migrations</td><td>SQLAlchemy + Alembic</td><td>Django</td></tr>
+  <tr><td>Built-in admin panel</td><td>Piccolo</td><td>(stay on Django)</td></tr>
+  <tr><td>Biggest hiring pool / docs</td><td>SQLAlchemy</td><td>Django</td></tr>
+</table>
+
+<h2 id="recommendation">5. Recommendation for this team</h2>
+<p>You're Django refugees eyeing FastAPI. Two honest paths:</p>
+<div class="ok"><b>1. Pragmatic / low-risk:</b> FastAPI + <b>SQLModel</b> + <b>Alembic</b> + Postgres. Async and modern DX, an escape hatch to full SQLAlchemy, and the best migration tool in the ecosystem. This is the recommendation for most teams.</div>
+<div class="note"><b>2. Django-comfort path:</b> FastAPI + <b>Tortoise ORM</b>. The query API feels like the Django ORM you know, which shortens ramp-up — but budget for Aerich's rough edges and validate your migration workflow <b>before</b> you commit, not after.</div>
+<p>Only reach for <b>Piccolo</b> if type-safety and its built-in admin genuinely move the needle and you're fine depending on a smaller project. And before any of this: be sure you actually need to leave Django — if the app is CRUD + admin, <b>Django 5.x with async views</b> may still be the cheaper answer.</p>
+<div class="rule">Whatever you pick, decide the <b>migration tool first</b> — it's the thing you'll live with longest.</div>
+
+<hr>
+<p class="foot">Written by Otto · Hosted on GitHub Pages · Sources: benchmarks and framework comparisons current as of July 2026. A starting point for the team's discussion, not gospel — the ORM landscape moves.</p>
+
+</div>
+</body>
+</html>
