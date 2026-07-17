@@ -181,7 +181,24 @@ async def heroes_on(team_name: str):
   <li><b>Encode-style async ORMs (Ormar / others):</b> Pydantic-friendly wrappers over SQLAlchemy Core; check maintenance status before committing.</li>
 </ul>
 
-<h2 id="migrations">3. Migrations (often the deciding factor)</h2>
+<h2 id="admin">3. Admin Panels (getting the Django admin back)</h2>
+<p>Losing the Django admin is the scariest part of leaving Django. Here's how to get most of it back on a FastAPI stack.</p>
+
+<h3>Django admin</h3>
+<p>The gold standard — deeply integrated, mature, zero-config for your models, with a huge ecosystem of third-party admin add-ons. But it's welded to the Django ORM: no SQLAlchemy, no SQLModel. Off the table the moment you leave Django.</p>
+
+<h3>Piccolo admin</h3>
+<p>The most polished out of the box: Vue frontend + REST backend, powerful filtering, media/file handling, CSV export, dark mode, and real security baked in (session auth, CSRF, rate limiting, MFA). Catches: <b>only works with the Piccolo ORM</b>, and customizing means touching both Python <i>and</i> Vue, not just a template.</p>
+
+<h3>starlette-admin</h3>
+<p>The flexible one, purpose-built for Starlette/FastAPI and async. Superpower: it's <b>ORM-agnostic</b> — SQLAlchemy, SQLModel, MongoEngine, ODMantic, or a custom data layer, and can manage e.g. Postgres + Mongo from one panel. Bootstrap + DataTables UI, server-rendered Jinja, so customizing is just Python/templates. Bring-your-own <code>AuthBackend</code> to plug into existing users. This is the natural admin for the FastAPI + SQLModel path.</p>
+
+<h3>sqladmin</h3>
+<p>The other big FastAPI admin — SQLAlchemy/SQLModel-specific (Tabler UI, WTForms, sync + async). Leaner and very popular; think of it as the simpler, SQLAlchemy-only alternative to starlette-admin.</p>
+
+<div class="ok"><b>Admin verdict:</b> none fully replicates Django admin's depth or third-party ecosystem, but for a FastAPI + SQLModel stack your shortlist is <b>starlette-admin</b> (more features, ORM-agnostic, easy to customize) or <b>sqladmin</b> (simpler, SQLAlchemy-focused). Either restores ~80% of the Django-admin comfort. Piccolo admin is genuinely nice but locks you to the Piccolo ORM.</div>
+
+<h2 id="migrations">4. Migrations (often the deciding factor)</h2>
 <p>Migrations, not query syntax, are where teams get burned.</p>
 <table>
   <tr><th>Tool</th><th>Used by</th><th>Maturity</th><th>Notes</th></tr>
@@ -192,7 +209,7 @@ async def heroes_on(team_name: str):
 </table>
 <div class="rule">If long-term schema evolution scares you (it should), that alone pushes toward the <b>SQLAlchemy/SQLModel + Alembic</b> camp.</div>
 
-<h2 id="matrix">4. Decision Matrix</h2>
+<h2 id="matrix">5. Decision Matrix</h2>
 <table>
   <tr><th>Priority</th><th>Best pick</th><th>Runner-up</th></tr>
   <tr><td>Safest, most future-proof</td><td>SQLAlchemy 2.0</td><td>SQLModel</td></tr>
@@ -204,7 +221,7 @@ async def heroes_on(team_name: str):
   <tr><td>Biggest hiring pool / docs</td><td>SQLAlchemy</td><td>Django</td></tr>
 </table>
 
-<h2 id="recommendation">5. Recommendation for this team</h2>
+<h2 id="recommendation">6. Recommendation for this team</h2>
 <p>You're Django refugees eyeing FastAPI. Two honest paths:</p>
 <div class="ok"><b>1. Pragmatic / low-risk:</b> FastAPI + <b>SQLModel</b> + <b>Alembic</b> + Postgres. Async and modern DX, an escape hatch to full SQLAlchemy, and the best migration tool in the ecosystem. This is the recommendation for most teams.</div>
 <div class="note"><b>2. Django-comfort path:</b> FastAPI + <b>Tortoise ORM</b>. The query API feels like the Django ORM you know, which shortens ramp-up — but budget for Aerich's rough edges and validate your migration workflow <b>before</b> you commit, not after.</div>
@@ -460,7 +477,48 @@ smaller project staying maintained.
 
 ---
 
-## Part 3 — Migrations (often the deciding factor)
+## Part 3 — Admin Panels (getting the Django admin back)
+
+Losing the Django admin is the scariest part of leaving Django. Here's how to get
+most of it back on a FastAPI stack.
+
+### Django admin
+
+The gold standard — deeply integrated, mature, zero-config for your models, with a
+huge ecosystem of third-party admin add-ons. But it's welded to the Django ORM:
+no SQLAlchemy, no SQLModel. Off the table the moment you leave Django.
+
+### Piccolo admin
+
+The most polished out of the box: Vue frontend + REST backend, powerful filtering,
+media/file handling, CSV export, dark mode, and real security baked in (session
+auth, CSRF, rate limiting, MFA). Catches: **only works with the Piccolo ORM**, and
+customizing means touching both Python *and* Vue, not just a template.
+
+### starlette-admin
+
+The flexible one, purpose-built for Starlette/FastAPI and async. Superpower: it's
+**ORM-agnostic** — SQLAlchemy, SQLModel, MongoEngine, ODMantic, or a custom data
+layer, and can manage e.g. Postgres + Mongo from one panel. Bootstrap + DataTables
+UI, server-rendered Jinja, so customizing is just Python/templates. Bring-your-own
+`AuthBackend` to plug into existing users. The natural admin for the
+FastAPI + SQLModel path.
+
+### sqladmin
+
+The other big FastAPI admin — SQLAlchemy/SQLModel-specific (Tabler UI, WTForms,
+sync + async). Leaner and very popular; the simpler, SQLAlchemy-only alternative to
+starlette-admin.
+
+**Admin verdict:** none fully replicates Django admin's depth or third-party
+ecosystem, but for a FastAPI + SQLModel stack your shortlist is **starlette-admin**
+(more features, ORM-agnostic, easy to customize) or **sqladmin** (simpler,
+SQLAlchemy-focused). Either restores ~80% of the Django-admin comfort. Piccolo
+admin is genuinely nice but locks you to the Piccolo ORM.
+
+---
+
+## Part 4 — Migrations (often the deciding factor)
 
 Migrations, not query syntax, are where teams get burned. Rank honestly:
 
@@ -476,7 +534,7 @@ the **SQLAlchemy/SQLModel + Alembic** camp.
 
 ---
 
-## Part 4 — Decision Matrix
+## Part 5 — Decision Matrix
 
 | Priority | Best pick | Runner-up |
 |----------|-----------|-----------|
@@ -522,6 +580,8 @@ live with longest.
 - [Python's Async ORM Landscape (Medium)](https://medium.com/@ThinkingLoop/pythons-async-orm-landscape-reality-over-hype-d3c4570ffc4f)
 - [SQLModel async status & patterns (DeepWiki)](https://deepwiki.com/fastapi/sqlmodel/5.4-async-support)
 - [Choosing the Right ORM for FastAPI (Medium, Marc Nealer)](https://medium.com/@marcnealer/choosing-the-right-orm-for-your-fastapi-project-616065f772e9)
+- [starlette-admin — docs & alternatives comparison](https://jowilf.github.io/starlette-admin/alternatives/)
+- [Beyond Django Admin: alternative Python admin interfaces (Leapcell)](https://leapcell.io/blog/beyond-django-admin-exploring-alternative-python-admin-interfaces)
 </script>
 <script>
 (function () {
