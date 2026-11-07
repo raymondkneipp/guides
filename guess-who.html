@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guess Who: Family Edition</title>
+<style>
+  :root { --bg:#0f1720; --card:#1b2733; --line:#2a3a48; --text:#eef2f5; --dim:#93a4b3; --accent:#2bb3a3; --gold:#d4af37; --red:#e25555; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, system-ui, sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:16px 14px 120px; }
+  h1 { font-size:24px; margin:6px 0 4px; } h1 span { color:var(--gold); }
+  .sub { color:var(--dim); margin:0 0 16px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  label { display:block; font-size:14px; color:var(--dim); margin:0 0 6px; }
+  textarea, input { width:100%; background:#0b1218; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:12px; font-size:16px; }
+  textarea { min-height:220px; resize:vertical; }
+  input.code { font-size:28px; letter-spacing:.3em; text-align:center; text-transform:uppercase; }
+  button { background:var(--accent); color:#06231f; border:0; border-radius:10px; padding:12px 16px; font-size:16px; font-weight:700; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--text); border:1px solid var(--line); font-weight:500; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .share { word-break:break-all; background:#0b1218; border:1px dashed var(--line); border-radius:10px; padding:12px; font-size:14px; }
+  .big { font-size:34px; letter-spacing:.25em; color:var(--gold); font-weight:800; text-align:center; margin:8px 0; }
+  .err { color:var(--red); margin-top:8px; min-height:1.2em; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; }
+  .card { position:relative; aspect-ratio:3/4; border-radius:12px; background:var(--card); border:2px solid var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; text-align:center; cursor:pointer; user-select:none; transition:transform .25s, opacity .25s, filter .25s; }
+  .card .face { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:#0b1218; margin-bottom:8px; }
+  .card .name { font-size:14px; font-weight:600; line-height:1.15; }
+  .card.down { opacity:.25; filter:grayscale(1); transform:scale(.94); }
+  .card.secret { border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:#0b1218ee; backdrop-filter:blur(8px); border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .bar .inner { max-width:900px; margin:0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .mode { flex:1; min-width:180px; font-size:14px; color:var(--dim); }
+  .mode b { color:var(--text); }
+  .pill { font-size:13px; padding:8px 12px; }
+  .hidden { display:none !important; }
+  .count { color:var(--dim); font-size:14px; margin:4px 0 10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Guess Who <span>Family Edition</span></h1>
+  <p class="sub" id="tagline">Pick a secret family member. Take turns asking yes or no questions. Flip down whoever it can't be.</p>
+
+  <!-- Host: build a deck -->
+  <section id="setup" class="panel hidden">
+    <label for="names">Who's in the deck? One name per line. Add an emoji after a | if you want one, like "Mom | 🌻".</label>
+    <textarea id="names" placeholder="Mom | 🌻&#10;Stepmom | 💅&#10;Dad | 🔧&#10;Grandma | 🧶&#10;Doc the cat | 🐱"></textarea>
+    <div class="row"><button id="create">Create game</button></div>
+    <div class="err" id="setupErr"></div>
+    <div id="created" class="hidden">
+      <p>Send your sister this link:</p>
+      <div class="share" id="shareLink"></div>
+      <p>And this code (send it separately, the link won't open without it):</p>
+      <div class="big" id="shareCode"></div>
+      <div class="row">
+        <button id="copyBoth">Copy link + code</button>
+        <button class="ghost" id="playNow">Play on this phone</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Guest: unlock a deck -->
+  <section id="join" class="panel hidden">
+    <label for="code">Enter the game code</label>
+    <input id="code" class="code" maxlength="6" autocomplete="off" autocapitalize="characters" inputmode="text">
+    <div class="row"><button id="unlock">Start</button></div>
+    <div class="err" id="joinErr"></div>
+  </section>
+
+  <!-- The board -->
+  <section id="game" class="hidden">
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<div class="bar hidden" id="bar"><div class="inner">
+  <div class="mode" id="mode"></div>
+  <button class="pill ghost" id="pickBtn">Pick secret</button>
+  <button class="pill ghost" id="hideBtn">Hide secret</button>
+  <button class="pill ghost" id="resetBtn">New round</button>
+</div></div>
+
+<script>
+// The deck (names) travels in the link's #fragment, encrypted with AES-GCM using a key
+// derived from the 6-letter code. The fragment is never sent to the server, and without
+// the code it's unreadable, so the link alone reveals nothing.
+const $ = (id) => document.getElementById(id);
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O/1/I to misread
+const COLORS = ['#f6c177', '#9ccfd8', '#c4a7e7', '#ebbcba', '#a3d9a5', '#f2a65a', '#8fb8ff', '#ffd6e0', '#b8e0d2', '#f7d794'];
+
+async function keyFor(code, salt) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(code.toUpperCase()), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(deck, code) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await keyFor(code, salt), enc.encode(JSON.stringify(deck)));
+  return [salt, iv, ct].map(b64u).join('.');
+}
+async function open(blob, code) {
+  const [salt, iv, ct] = blob.split('.').map(unb64u);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await keyFor(code, salt), ct);
+  return JSON.parse(dec.decode(pt));
+}
+
+function parseNames(text) {
+  const seen = new Set(), people = [];
+  for (const line of text.split('\n')) {
+    const [rawName, rawEmoji] = line.split('|').map((s) => (s || '').trim());
+    if (!rawName || seen.has(rawName.toLowerCase())) continue;
+    seen.add(rawName.toLowerCase());
+    people.push({ n: rawName.slice(0, 40), e: (rawEmoji || '').slice(0, 8) });
+  }
+  return people;
+}
+
+// --- game state (per phone; your secret never leaves your device) ---
+let deck = null, blobId = '', mode = 'flip';
+const store = () => `gw:${blobId}`;
+const load = () => JSON.parse(localStorage.getItem(store()) || '{"down":[],"secret":null}');
+const save = (s) => localStorage.setItem(store(), JSON.stringify(s));
+
+function render() {
+  const s = load(), grid = $('grid');
+  grid.innerHTML = '';
+  deck.people.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'card' + (s.down.includes(i) ? ' down' : '') + (s.secret === i && !s.hideSecret ? ' secret' : '');
+    const initials = p.n.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+    el.innerHTML = `<div class="face" style="background:${COLORS[i % COLORS.length]}">${p.e || initials}</div><div class="name"></div>`;
+    el.querySelector('.name').textContent = p.n;
+    el.onclick = () => tap(i);
+    grid.appendChild(el);
+  });
+  const left = deck.people.length - s.down.length;
+  $('count').textContent = `${left} of ${deck.people.length} still standing`;
+  const secretName = s.secret == null ? null : deck.people[s.secret].n;
+  $('mode').innerHTML = mode === 'pick'
+    ? '<b>Tap your secret person.</b> Only you can see it.'
+    : secretName == null ? 'First, <b>pick your secret</b> person.'
+    : s.hideSecret ? 'Secret hidden. Tap cards to flip them down.'
+    : `Your secret: <b></b>. Tap cards to flip them down.`;
+  if (mode !== 'pick' && secretName && !s.hideSecret) $('mode').querySelector('b').textContent = secretName;
+  $('hideBtn').textContent = s.hideSecret ? 'Show secret' : 'Hide secret';
+  $('hideBtn').classList.toggle('hidden', s.secret == null);
+}
+function tap(i) {
+  const s = load();
+  if (mode === 'pick') { s.secret = i; s.hideSecret = false; mode = 'flip'; }
+  else { s.down = s.down.includes(i) ? s.down.filter((x) => x !== i) : [...s.down, i]; }
+  save(s); render();
+}
+$('pickBtn').onclick = () => { mode = 'pick'; render(); };
+$('hideBtn').onclick = () => { const s = load(); s.hideSecret = !s.hideSecret; save(s); render(); };
+$('resetBtn').onclick = () => { if (confirm('Start a new round? This clears your flips and your secret.')) { save({ down: [], secret: null }); mode = 'pick'; render(); } };
+
+function startGame(d) {
+  deck = d;
+  ['setup', 'join'].forEach((id) => $(id).classList.add('hidden'));
+  $('game').classList.remove('hidden'); $('bar').classList.remove('hidden');
+  $('tagline').textContent = deck.title || 'Pick a secret family member. Take turns asking yes or no questions. Flip down whoever it can\'t be.';
+  if (load().secret == null) mode = 'pick';
+  render();
+}
+
+// --- host flow ---
+$('create').onclick = async () => {
+  const people = parseNames($('names').value);
+  if (people.length < 4) { $('setupErr').textContent = 'Add at least 4 people.'; return; }
+  $('setupErr').textContent = '';
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => ALPHA[b % ALPHA.length]).join('');
+  const blob = await seal({ people }, code);
+  const link = `${location.origin}${location.pathname}#g=${blob}`;
+  $('shareLink').textContent = link; $('shareCode').textContent = code;
+  $('created').classList.remove('hidden');
+  $('copyBoth').onclick = async () => {
+    await navigator.clipboard.writeText(`Let's play Guess Who: Family Edition 🎲\n${link}\nCode: ${code}`);
+    $('copyBoth').textContent = 'Copied ✓';
+  };
+  $('playNow').onclick = () => { blobId = blob.slice(-16); history.replaceState(null, '', `#g=${blob}`); startGame({ people }); };
+};
+
+// --- guest flow ---
+async function tryUnlock(blob) {
+  const code = $('code').value.trim().toUpperCase();
+  try { blobId = blob.slice(-16); startGame(await open(blob, code)); sessionStorage.setItem('gw:code:' + blobId, code); }
+  catch { $('joinErr').textContent = "That code didn't work. Check it and try again."; }
+}
+
+(async () => {
+  const m = location.hash.match(/#g=([\w.-]+)/);
+  if (!m) { $('setup').classList.remove('hidden'); return; }
+  const blob = m[1];
+  const remembered = sessionStorage.getItem('gw:code:' + blob.slice(-16));
+  if (remembered) { $('code').value = remembered; return tryUnlock(blob); }
+  $('join').classList.remove('hidden');
+  $('unlock').onclick = () => tryUnlock(blob);
+  $('code').onkeydown = (e) => { if (e.key === 'Enter') tryUnlock(blob); };
+})();
+</script>
+</body>
+</html>
